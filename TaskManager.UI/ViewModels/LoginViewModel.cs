@@ -51,7 +51,7 @@ public class LoginViewModel : BaseViewModel
     private async Task Login(string password)
     {
         var ok = await _authService.LoginAsync(Username, password);
-        StatusMessage = ok ? "Вход выполнен" : "Неверные учетные данные";
+        StatusMessage = ok ? "Successful authentification" : "Wrong username or password";
         OnPropertyChanged(nameof(StatusMessage));
         
         if (ok) LoginSucceeded?.Invoke(this, EventArgs.Empty);
@@ -60,7 +60,7 @@ public class LoginViewModel : BaseViewModel
     private async Task Register(string password)
     {
         var ok = await _authService.RegisterAsync(Username, password);
-        StatusMessage = ok ? "Пользователь зарегистрирован" : "Пользователь уже существует";
+        StatusMessage = ok ? "User registered" : "User already exists";
         OnPropertyChanged(nameof(StatusMessage));
     }
 }
