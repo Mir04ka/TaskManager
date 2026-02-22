@@ -1,0 +1,25 @@
+﻿{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=taskmanager;Username=postgres;Password=1234"
+  },
+  "Serilog": {
+    "MinimumLevel": "Information",
+    "WriteTo": [
+      {
+        "Name": "Console",
+        "Args": {
+          "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "taskmanager.log",
+          "rollingInterval": "Day",
+          "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+          "retainedFileCountLimit": 10
+        }
+      }
+    ]
+  }
+}
