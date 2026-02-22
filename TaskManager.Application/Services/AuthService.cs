@@ -1,5 +1,6 @@
 ﻿using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace TaskManager.Application.Services;
 
@@ -7,21 +8,23 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _repo;
     private readonly ICurrentUserService _currentUser;
+    private readonly ILogger<AuthService> _logger;
     
-    public AuthService(IUserRepository repo, ICurrentUserService currentUser)
+    public AuthService(IUserRepository repo, ICurrentUserService currentUser, ILogger<AuthService> logger)
     {
         _repo = repo;
         _currentUser = currentUser;
+        _logger = logger;
     }
 
     public async Task<bool> RegisterAsync(string username, string password)
     {
-        Console.WriteLine($"[REGISTER] Username: {username}, Password length: {password.Length}");
+        _logger.LogInformation("Registration attempt for username: {Username}", username);
         
         var exists = await _repo.GetByUsernameAsync(username);
         if (exists != null)
         {
-            Console.WriteLine("[REGISTER] User already exists");
+            _logger.LogWarning("Registration failed - user already exists: {Username}", username);
             return false;
         }
 
@@ -35,38 +38,34 @@ public class AuthService : IAuthService
         };
         
         await _repo.AddAsync(user);
-        Console.WriteLine("[REGISTER] User saved to database");
+        _logger.LogInformation("User registered successfully: {Username}", username);
         return true;
     }
 
     public async Task<bool> LoginAsync(string username, string password)
     {
-        Console.WriteLine($"[LOGIN] Attempting login for: {username}");
-        Console.WriteLine($"[LOGIN] Password length: {password.Length}");
+        _logger.LogInformation("Login attempt for username: {Username}", username);
         
         var user = await _repo.GetByUsernameAsync(username);
         
         if (user == null)
         {
-            Console.WriteLine("[LOGIN] User not found");
+            _logger.LogWarning("User not found: {Username}", username);
             return false;
         }
         
-        Console.WriteLine($"[LOGIN] User found with hash: {user.PasswordHash}");
-        
         var verified = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
-        Console.WriteLine($"[LOGIN] Password verified: {verified}");
         
         if (!verified)
         {
-            Console.WriteLine("[LOGIN] Password verification failed");
+            _logger.LogWarning("Invalid password for user: {Username}", username);
             return false;
         }
         
         _currentUser.CurrentUserId = user.Id;
         _currentUser.CurrentUsername = user.Username;
         
-        Console.WriteLine("[LOGIN] Login successful");
+        _logger.LogInformation("User logged in successfully: {Username} (ID: {UserId})", username, user.Id);
         return true;
     }
 }

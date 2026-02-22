@@ -1,8 +1,10 @@
-﻿using System;
+﻿using System.IO;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 using TaskManager.Application.Services;
 using TaskManager.Domain.Interfaces;
 using TaskManager.Infrastructure.Data;
@@ -19,52 +21,89 @@ namespace TaskManager.UI
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
-            _host = Host.CreateDefaultBuilder()
-                .ConfigureServices((context, services) =>
-                {
-                    var conn = "Host=localhost;Port=5432;Database=taskmanager;Username=postgres;Password=1234";
-                    services.AddDbContext<AppDbContext>(options =>
-                        options.UseNpgsql(conn));
-
-                    // Infrastructure -> Application
-                    services.AddScoped<IUserRepository, UserRepository>();
-                    services.AddScoped<ITaskRepository, TaskRepository>();
-
-                    // Application services
-                    services.AddScoped<IAuthService, AuthService>();
-                    services.AddScoped<ITaskService, TaskService>();
-
-                    // ViewModels
-                    services.AddTransient<MainViewModel>();
-                    services.AddTransient<TaskViewModel>();
-                    services.AddTransient<LoginViewModel>();
-                    services.AddTransient<SettingsViewModel>();
-
-                    // Views
-                    services.AddTransient<MainWindow>();
-
-                    // Language service
-                    services.AddSingleton<LanguageService>();
-                    
-                    services.AddSingleton<ICurrentUserService, CurrentUserService>();
-                })
+            
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddUserSecrets<App>()
                 .Build();
 
-            _host.Start();
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(configuration)
+                .CreateLogger();
 
-            var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-            mainWindow.Show();
+            try
+            {
+                Log.Information("Starting application");
+                
+                _host = Host.CreateDefaultBuilder()
+                    .UseSerilog()
+                    .ConfigureServices((context, services) =>
+                    {
+                        var conn = configuration.GetConnectionString("DefaultConnection");
+                        
+                        Log.Information("Connection to DB...");
+                        services.AddDbContext<AppDbContext>(options =>
+                            options.UseNpgsql(conn));
+
+                        // Infrastructure -> Application
+                        services.AddScoped<IUserRepository, UserRepository>();
+                        services.AddScoped<ITaskRepository, TaskRepository>();
+
+                        // Application services
+                        services.AddScoped<IAuthService, AuthService>();
+                        services.AddScoped<ITaskService, TaskService>();
+
+                        // ViewModels
+                        services.AddTransient<MainViewModel>();
+                        services.AddTransient<TaskViewModel>();
+                        services.AddTransient<LoginViewModel>();
+                        services.AddTransient<SettingsViewModel>();
+
+                        // Views
+                        services.AddTransient<MainWindow>();
+
+                        // Language service
+                        services.AddSingleton<LanguageService>();
+
+                        services.AddSingleton<ICurrentUserService, CurrentUserService>();
+                    })
+                    .Build();
+                
+                _host.Start();
+
+                var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+                mainWindow.Show();
+                
+                Log.Information("Application started");
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Application startup failed");
+            }
         }
 
         protected override async void OnExit(ExitEventArgs e)
         {
-            if (_host != null)
+            try
             {
-                await _host.StopAsync();
-                _host.Dispose();
+                Log.Information("Shutting down application");
+
+                if (_host != null)
+                {
+                    await _host.StopAsync();
+                    _host.Dispose();
+                }
             }
-            base.OnExit(e);
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error during shutting down");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+                base.OnExit(e);
+            }
         }
     }
 }
