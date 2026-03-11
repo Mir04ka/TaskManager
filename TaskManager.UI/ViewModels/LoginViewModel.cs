@@ -1,66 +1,98 @@
-﻿using System.Windows.Input;
-using TaskManager.Application.Services;
-using TaskManager.UI.Commands;
+﻿using System;
+using System.Threading.Tasks;
+using System.Windows.Input;
+using Microsoft.Extensions.Logging;
+using Prism.Commands;
+using Prism.Mvvm;
+using Prism.Regions;
+using TaskManager.UI.Services;
 
 namespace TaskManager.UI.ViewModels;
 
-public class LoginViewModel : BaseViewModel
+public class LoginViewModel : BindableBase, INavigationAware
 {
-    private readonly IAuthService _authService;
+    private readonly IApiClient _apiClient;
+    private readonly IRegionManager _regionManager;
+    private readonly ILogger<LoginViewModel> _logger;
     private readonly LanguageService _languageService;
-    
-    public event EventHandler? LoginSucceeded;
-    
+
     private string _username = string.Empty;
-    public string Username 
-    { 
+    public string Username
+    {
         get => _username;
-        set { _username = value; OnPropertyChanged(); }
-    }
-    
-    private string _statusMessage = string.Empty;
-    public string StatusMessage 
-    { 
-        get => _statusMessage;
-        set { _statusMessage = value; OnPropertyChanged(); }
-    }
-    
-    public List<string> AvailableLanguages => _languageService.AvailableLanguages;
-    
-    public string SelectedLanguage
-    {
-        get => _languageService.CurrentLanguage;
-        set
-        {
-            _languageService.SetLanguage(value);
-            OnPropertyChanged();
-        }
-    }
-    
-    public ICommand LoginCommand { get; }
-    public ICommand RegisterCommand { get; }
-    
-    public LoginViewModel(IAuthService authService, LanguageService languageService)
-    {
-        _authService = authService;
-        _languageService = languageService;
-        LoginCommand = new RelayCommand(async p => await Login((p as string) ?? ""));
-        RegisterCommand = new RelayCommand(async p => await Register((p as string) ?? ""));
+        set => SetProperty(ref _username, value);
     }
 
-    private async Task Login(string password)
+    private string _statusMessage = string.Empty;
+    public string StatusMessage
     {
-        var ok = await _authService.LoginAsync(Username, password);
-        StatusMessage = ok ? "Successful authentification" : "Wrong username or password";
-        OnPropertyChanged(nameof(StatusMessage));
-        
-        if (ok) LoginSucceeded?.Invoke(this, EventArgs.Empty);
+        get => _statusMessage;
+        set => SetProperty(ref _statusMessage, value);
     }
-    
-    private async Task Register(string password)
+
+    public LanguageViewModel LanguageVM { get; }
+
+    public ICommand LoginCommand { get; }
+    public ICommand RegisterCommand { get; }
+
+    public LoginViewModel(IApiClient apiClient, IRegionManager regionManager, ILogger<LoginViewModel> logger, LanguageViewModel languageViewModel)
     {
-        var ok = await _authService.RegisterAsync(Username, password);
-        StatusMessage = ok ? "User registered" : "User already exists";
-        OnPropertyChanged(nameof(StatusMessage));
+        _apiClient = apiClient;
+        _regionManager = regionManager;
+        _logger = logger;
+        LanguageVM = languageViewModel;
+
+        LoginCommand = new DelegateCommand<string>(async password => await Login(password));
+        RegisterCommand = new DelegateCommand<string>(async password => await Register(password));
     }
+
+    private async Task Login(string? password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            StatusMessage = "Enter password";
+            return;
+        }
+
+        _logger.LogDebug("Login attempt for username: {Username}", Username);
+
+        var response = await _apiClient.LoginAsync(Username, password);
+
+        if (response != null)
+        {
+            StatusMessage = "Login success";
+            _logger.LogInformation("Login successful, navigating to tasks");
+            _regionManager.RequestNavigate("ContentRegion", "TaskView");
+        }
+        else
+        {
+            StatusMessage = "Wrong username or password";
+        }
+    }
+
+    private async Task Register(string? password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            StatusMessage = "Enter password";
+            return;
+        }
+
+        _logger.LogDebug("Register attempt for username: {Username}", Username);
+
+        var response = await _apiClient.RegisterAsync(Username, password);
+
+        if (response != null)
+        {
+            StatusMessage = "User has been registered successfully";
+        }
+        else
+        {
+            StatusMessage = "User already registered";
+        }
+    }
+
+    public void OnNavigatedTo(NavigationContext navigationContext) { }
+    public bool IsNavigationTarget(NavigationContext navigationContext) => true;
+    public void OnNavigatedFrom(NavigationContext navigationContext) { }
 }

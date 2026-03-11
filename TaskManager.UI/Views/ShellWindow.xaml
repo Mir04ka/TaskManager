@@ -1,11 +1,15 @@
-﻿<mah:MetroWindow x:Class="TaskManager.UI.Views.MainWindow"
+﻿<mah:MetroWindow x:Class="TaskManager.UI.Views.ShellWindow"
                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+                 xmlns:prism="http://prismlibrary.com/"
+                 prism:ViewModelLocator.AutoWireViewModel="True"
                  Title="Task Manager"
                  Height="600"
                  Width="900">
-
-    <ContentControl Content="{Binding CurrentViewModel}"/>
-
+    
+    <Grid>
+        <ContentControl prism:RegionManager.RegionName="ContentRegion" />
+    </Grid>
+    
 </mah:MetroWindow>
