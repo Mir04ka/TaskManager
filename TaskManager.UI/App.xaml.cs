@@ -41,6 +41,10 @@ public partial class App : PrismApplication
         containerRegistry.RegisterSingleton<HttpClient>();
         containerRegistry.RegisterSingleton<IApiClient, ApiClient>();
 
+        // Auth services
+        containerRegistry.RegisterSingleton<ITokenStorage, TokenStorage>();
+        containerRegistry.RegisterSingleton<IAuthService, AuthService>();
+        
         // Language
         containerRegistry.RegisterSingleton<LanguageService>();
         containerRegistry.RegisterSingleton<LanguageViewModel>();

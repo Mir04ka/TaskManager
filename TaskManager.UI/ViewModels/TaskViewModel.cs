@@ -16,23 +16,29 @@ public class TaskViewModel : BindableBase, INavigationAware
 {
     private readonly IApiClient _apiClient;
     private readonly ILogger<TaskViewModel> _logger;
+    private readonly IRegionManager _regionManager;
+    private readonly IAuthService _authService;
     private readonly LanguageService _languageService;
 
     public ObservableCollection<TaskItemVm> Tasks { get; } = new ObservableCollection<TaskItemVm>();
 
     public ICommand AddTaskCommand { get; }
     public ICommand RefreshCommand { get; }
+    public ICommand LogoutCommand { get; }
     
     public LanguageViewModel LanguageVM { get; }
 
-    public TaskViewModel(IApiClient apiClient, ILogger<TaskViewModel> logger, LanguageViewModel languageViewModel)
+    public TaskViewModel(IApiClient apiClient, IAuthService authService, IRegionManager regionManager, ILogger<TaskViewModel> logger, LanguageViewModel languageViewModel)
     {
         _apiClient = apiClient;
+        _authService = authService;
+        _regionManager = regionManager;
         _logger = logger;
         LanguageVM = languageViewModel;
 
         AddTaskCommand = new DelegateCommand(async () => await AddTaskAsync());
         RefreshCommand = new DelegateCommand(async () => await LoadAsync());
+        LogoutCommand = new DelegateCommand(Logout);
     }
 
     public async Task LoadAsync()
@@ -96,6 +102,12 @@ public class TaskViewModel : BindableBase, INavigationAware
 
     public bool IsNavigationTarget(NavigationContext navigationContext) => true;
     public void OnNavigatedFrom(NavigationContext navigationContext) { }
+    
+    private void Logout()
+    {
+        _authService.Logout();
+        _regionManager.RequestNavigate("ContentRegion", "LoginView");
+    }
 }
 
 public class TaskItemVm : BindableBase

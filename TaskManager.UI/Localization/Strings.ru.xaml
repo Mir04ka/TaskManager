@@ -20,4 +20,5 @@
     <sys:String x:Key="Description">Описание</sys:String>
     <sys:String x:Key="BackToTasks">Назад к задачам</sys:String>
     <sys:String x:Key="NoDescription">Нет описания</sys:String>
+    <sys:String x:Key="Logout">Выход</sys:String>
 </ResourceDictionary>

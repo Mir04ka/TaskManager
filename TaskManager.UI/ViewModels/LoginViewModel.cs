@@ -14,7 +14,7 @@ public class LoginViewModel : BindableBase, INavigationAware
     private readonly IApiClient _apiClient;
     private readonly IRegionManager _regionManager;
     private readonly ILogger<LoginViewModel> _logger;
-    private readonly LanguageService _languageService;
+    private readonly IAuthService _authService;
 
     private string _username = string.Empty;
     public string Username
@@ -35,11 +35,12 @@ public class LoginViewModel : BindableBase, INavigationAware
     public ICommand LoginCommand { get; }
     public ICommand RegisterCommand { get; }
 
-    public LoginViewModel(IApiClient apiClient, IRegionManager regionManager, ILogger<LoginViewModel> logger, LanguageViewModel languageViewModel)
+    public LoginViewModel(IApiClient apiClient, IRegionManager regionManager, ILogger<LoginViewModel> logger, LanguageViewModel languageViewModel, IAuthService authService)
     {
         _apiClient = apiClient;
         _regionManager = regionManager;
         _logger = logger;
+        _authService = authService;
         LanguageVM = languageViewModel;
 
         LoginCommand = new DelegateCommand<string>(async password => await Login(password));
@@ -60,6 +61,8 @@ public class LoginViewModel : BindableBase, INavigationAware
 
         if (response != null)
         {
+            await _authService.LoginAsync(response.Token, response.Username, response.UserId);
+            
             StatusMessage = "Login success";
             _logger.LogInformation("Login successful, navigating to tasks");
             _regionManager.RequestNavigate("ContentRegion", "TaskView");

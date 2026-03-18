@@ -22,6 +22,19 @@ public class ApiClient : IApiClient
     {
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
+    
+    public async Task<bool> ValidateTokenAsync()
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("tasks");
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     public async Task<AuthResponse?> LoginAsync(string username, string password)
     {

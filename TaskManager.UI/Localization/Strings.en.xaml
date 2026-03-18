@@ -20,4 +20,5 @@
     <sys:String x:Key="Description">Description</sys:String>
     <sys:String x:Key="BackToTasks">Back to Tasks</sys:String>
     <sys:String x:Key="NoDescription">No description</sys:String>
+    <sys:String x:Key="Logout">Logout</sys:String>
 </ResourceDictionary>

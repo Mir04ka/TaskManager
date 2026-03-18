@@ -11,4 +11,5 @@ public interface IApiClient
     Task UpdateTaskAsync(Guid id, string title, string description);
     Task DeleteTaskAsync(Guid id);
     void SetToken(string token);
+    Task<bool> ValidateTokenAsync();
 }
