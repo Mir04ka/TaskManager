@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using TaskManager.API.DTOs;
+using TaskManager.Application.Common;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
 
@@ -28,20 +29,33 @@ public class TasksController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<TaskItemDto>>> GetTasks()
+    public async Task<ActionResult<PagedResult<TaskItemDto>>> GetTasks(int pageNumber = 1, int pageSize = 10)
     {
         var userId = GetCurrentUserId();
-        _logger.LogInformation("Getting tasks for user {UserId}", userId);
+        
+        _logger.LogInformation(
+            "Getting tasks for user {UserId}, page {Page}, size {Size}",
+            userId, pageNumber, pageSize);
+        
+        pageNumber = pageNumber < 1 ? 1 : pageNumber;
+        pageSize = pageSize > 100 ? 100 : pageSize;
 
-        var tasks = await _taskRepo.GetByUserIdAsync(userId);
-        var dtos = tasks.Select(t => new TaskItemDto
+        var result = await _taskRepo.GetByUserIdAsync(userId, pageNumber, pageSize);
+
+        var dto = new PagedResult<TaskItemDto>
         {
-            Id = t.Id,
-            Title = t.Title,
-            Description = t.Description
-        }).ToList();
+            Items = result.Items.Select(t => new TaskItemDto
+            {
+                Id = t.Id,
+                Title = t.Title,
+                Description = t.Description,
+            }).ToList(),
+            TotalCount = result.TotalCount,
+            PageNumber = result.PageNumber,
+            PageSize = result.PageSize,
+        };
 
-        return Ok(dtos);
+        return Ok(dto);
     }
 
     [HttpPost]

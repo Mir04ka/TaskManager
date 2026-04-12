@@ -1,11 +1,11 @@
-﻿using TaskManager.Domain.Entities;
+﻿using TaskManager.Application.Common;
+using TaskManager.Domain.Entities;
 
 namespace TaskManager.Domain.Interfaces;
 
 public interface ITaskRepository
 {
-    Task<List<TaskItem>> GetAllAsync();
-    Task<List<TaskItem>> GetByUserIdAsync(Guid userId);
+    Task<PagedResult<TaskItem>> GetByUserIdAsync(Guid userId, int pageNumber, int pageSize);
     Task AddAsync(TaskItem item);
     Task UpdateAsync(TaskItem item);
     Task DeleteAsync(Guid id);

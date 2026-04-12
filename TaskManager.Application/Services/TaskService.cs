@@ -1,6 +1,7 @@
 ﻿using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
+using TaskManager.Application.Common;
 
 namespace TaskManager.Application.Services;
 
@@ -17,21 +18,31 @@ public class TaskService : ITaskService
         _logger = logger;
     }
 
-    public Task<List<TaskItem>> GetAllAsync() => _repo.GetAllAsync();
-    
-    public Task<List<TaskItem>> GetCurrentUserTasksAsync()
+    public async Task<PagedResult<TaskItem>> GetCurrentUserTasksAsync(int pageNumber, int pageSize)
     {
         if (_currentUser.CurrentUserId == null)
         {
             _logger.LogWarning("Attempted  to get tasks without logged in user");
-            return Task.FromResult(new List<TaskItem>());
+            return new PagedResult<TaskItem>
+            {
+                Items = new List<TaskItem>(),
+                TotalCount = 0,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
         
-        _logger.LogInformation("Loading tasks for user: {UserId}", _currentUser.CurrentUserId);
-        var tasks = _repo.GetByUserIdAsync(_currentUser.CurrentUserId.Value);
-        _logger.LogInformation("Loaded tasks for user: {UserId}", _currentUser.CurrentUserId);
+        var userId = _currentUser.CurrentUserId.Value;
 
-        return tasks;
+        _logger.LogInformation("Loading tasks for user: {UserId}, page {Page}, size {Size}",
+            userId, pageNumber, pageSize);
+
+        var result = await _repo.GetByUserIdAsync(userId, pageNumber, pageSize);
+        
+        _logger.LogInformation("Loaded {Count} tasks for user: {UserId}",
+            result.Items.Count, userId);
+
+        return result;
     }
     
     public async Task AddAsync(TaskItem item)

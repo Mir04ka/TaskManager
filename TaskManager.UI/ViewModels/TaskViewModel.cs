@@ -19,12 +19,37 @@ public class TaskViewModel : BindableBase, INavigationAware
     private readonly IRegionManager _regionManager;
     private readonly IAuthService _authService;
     private readonly LanguageService _languageService;
+    
+    private int _pageNumber = 1;
+    public int PageNumber
+    {
+        get => _pageNumber;
+        set => SetProperty(ref _pageNumber, value);
+    }
+
+    private int _pageSize = 10;
+    public int PageSize
+    {
+        get => _pageSize;
+        set => SetProperty(ref _pageSize, value);
+    }
+
+    private int _totalCount;
+    public int TotalCount
+    {
+        get => _totalCount;
+        set => SetProperty(ref _totalCount, value);
+    }
+
+    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 
     public ObservableCollection<TaskItemVm> Tasks { get; } = new ObservableCollection<TaskItemVm>();
 
     public ICommand AddTaskCommand { get; }
     public ICommand RefreshCommand { get; }
     public ICommand LogoutCommand { get; }
+    public ICommand NextPageCommand { get; }
+    public ICommand PrevPageCommand { get; }
     
     public LanguageViewModel LanguageVM { get; }
 
@@ -39,27 +64,35 @@ public class TaskViewModel : BindableBase, INavigationAware
         AddTaskCommand = new DelegateCommand(async () => await AddTaskAsync());
         RefreshCommand = new DelegateCommand(async () => await LoadAsync());
         LogoutCommand = new DelegateCommand(Logout);
+        NextPageCommand = new DelegateCommand(async () => await NextPage(), CanGoNext)
+            .ObservesProperty(() => PageNumber)
+            .ObservesProperty(() => TotalCount);
+
+        PrevPageCommand = new DelegateCommand(async () => await PrevPage(), CanGoPrev)
+            .ObservesProperty(() => PageNumber);
     }
 
     public async Task LoadAsync()
     {
         try
         {
-            var items = await _apiClient.GetTasksAsync();
+            var result  = await _apiClient.GetTasksAsync(PageNumber, PageSize);
             Tasks.Clear();
 
-            foreach (var item in items)
+            foreach (var item in result.Items)
             {
-                var vm = new TaskItemVm(this, _apiClient)
+                Tasks.Add(new TaskItemVm(this, _apiClient)
                 {
                     Id = item.Id,
                     Title = item.Title,
-                    Description = item.Description
-                };
-                Tasks.Add(vm);
+                    Description = item.Description,
+                });
             }
+            
+            TotalCount = result.TotalCount;
+            RaisePropertyChanged(nameof(TotalPages));
 
-            _logger.LogInformation("Loaded {Count} tasks", items.Count);
+            _logger.LogInformation("Loaded page {Page} with {Count} tasks", PageNumber, Tasks.Count);
         }
         catch (Exception ex)
         {
@@ -107,6 +140,27 @@ public class TaskViewModel : BindableBase, INavigationAware
     {
         _authService.Logout();
         _regionManager.RequestNavigate("ContentRegion", "LoginView");
+    }
+    
+    private bool CanGoNext() => PageNumber < TotalPages;
+    private bool CanGoPrev() => PageNumber > 1;
+
+    private async Task NextPage()
+    {
+        if (PageNumber < TotalPages)
+        {
+            PageNumber++;
+            await LoadAsync();
+        }
+    }
+
+    private async Task PrevPage()
+    {
+        if (PageNumber > 1)
+        {
+            PageNumber--;
+            await LoadAsync();
+        }
     }
 }
 

@@ -6,6 +6,7 @@ using Moq;
 using System.Security.Claims;
 using TaskManager.API.Controllers;
 using TaskManager.API.DTOs;
+using TaskManager.Application.Common;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
 using Xunit;
@@ -51,18 +52,28 @@ public class TasksControllerTests
         };
 
         _taskRepositoryMock
-            .Setup(x => x.GetByUserIdAsync(_testUserId))
-            .ReturnsAsync(tasks);
+            .Setup(x => x.GetByUserIdAsync(_testUserId, 1, 10))
+            .ReturnsAsync(new PagedResult<TaskItem>
+            {
+                Items = tasks,
+                TotalCount = 2,
+                PageNumber = 1,
+                PageSize = 10
+            });
 
         // Act
-        var result = await _controller.GetTasks();
+        var result = await _controller.GetTasks(1, 10);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
+
         var okResult = result.Result as OkObjectResult;
-        var returnedTasks = okResult!.Value as List<TaskItemDto>;
-        returnedTasks.Should().HaveCount(2);
-        returnedTasks![0].Title.Should().Be("Task 1");
+
+        var returned = okResult!.Value as PagedResult<TaskItemDto>;
+
+        returned.Should().NotBeNull();
+        returned!.Items.Should().HaveCount(2);
+        returned.Items[0].Title.Should().Be("Task 1");
     }
 
     [Fact]

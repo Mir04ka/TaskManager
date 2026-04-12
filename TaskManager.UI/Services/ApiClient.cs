@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
+using TaskManager.Application.Common;
 using TaskManager.UI.Models;
 
 namespace TaskManager.UI.Services;
@@ -90,18 +91,37 @@ public class ApiClient : IApiClient
         }
     }
 
-    public async Task<List<TaskItemDto>> GetTasksAsync()
+    public async Task<PagedResult<TaskItemDto>> GetTasksAsync(int pageNumber, int pageSize)
     {
         try
         {
-            var response = await _httpClient.GetAsync("tasks");
+            var url = $"tasks?pageNumber={pageNumber}&pageSize={pageSize}";
+            
+            var response = await _httpClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<List<TaskItemDto>>() ?? new List<TaskItemDto>();
+            
+            var result = await response.Content
+                .ReadFromJsonAsync<PagedResult<TaskItemDto>>();
+            
+            return result ?? new PagedResult<TaskItemDto>
+            {
+                Items = new List<TaskItemDto>(),
+                TotalCount = 0,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting tasks");
-            return new List<TaskItemDto>();
+            
+            return new PagedResult<TaskItemDto>
+            {
+                Items = new List<TaskItemDto>(),
+                TotalCount = 0,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
     }
 

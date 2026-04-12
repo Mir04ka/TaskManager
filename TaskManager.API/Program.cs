@@ -90,7 +90,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Repositories
+// Repos
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 

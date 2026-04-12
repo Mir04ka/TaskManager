@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TaskManager.Application.Common;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
 using TaskManager.Infrastructure.Data;
@@ -9,12 +10,29 @@ public class TaskRepository : ITaskRepository
 {
     private readonly AppDbContext _db;
     public TaskRepository(AppDbContext db) => _db = db;
-    
-    public async Task<List<TaskItem>> GetAllAsync()
-        => await _db.Tasks.AsNoTracking().ToListAsync();
 
-    public async Task<List<TaskItem>> GetByUserIdAsync(Guid userId)
-        => await _db.Tasks.Where(t => t.UserId == userId).AsNoTracking().ToListAsync();
+    public async Task<PagedResult<TaskItem>> GetByUserIdAsync(Guid userId, int pageNumber, int pageSize)
+    {
+        var query = _db.Tasks
+            .Where(t => t.UserId == userId)
+            .AsNoTracking();
+        
+        var totalCount  = await query.CountAsync();
+        
+        var items = await query
+            .OrderBy(t => t.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PagedResult<TaskItem>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+    }
 
     public async Task AddAsync(TaskItem item)
     {
