@@ -9,12 +9,14 @@
       <UserSecretsId>de03f707-8343-4363-9fe1-cb1af1926924</UserSecretsId>
   </PropertyGroup>
 
-    <ItemGroup>
+  <ItemGroup>
       <ProjectReference Include="..\TaskManager.Application\TaskManager.Application.csproj" />
       <ProjectReference Include="..\TaskManager.Infrastructure\TaskManager.Infrastructure.csproj" />
-    </ItemGroup>
+  </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="RestEase" Version="1.6.4" />
+      <PackageReference Include="Polly" Version="7.2.0" />
       <PackageReference Include="MahApps.Metro" Version="3.0.0-rc0529" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.2">
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
