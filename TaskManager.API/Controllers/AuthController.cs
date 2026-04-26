@@ -1,54 +1,61 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TaskManager.API.DTOs;
 using TaskManager.API.Services;
-using TaskManager.Domain.Entities;
-using TaskManager.Domain.Interfaces;
+using TaskManager.Application.Services;
 
 namespace TaskManager.API.Controllers;
 
+/// <summary>
+/// SRP: This controller only handles HTTP concerns (routing, status codes, DTO mapping).
+/// All auth business logic (password hashing, user existence checks) lives in IAuthService.
+/// DIP: Depends on IAuthService (Application abstraction) not on IUserRepository (Infrastructure).
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly IUserRepository _userRepo;
-    private readonly IJwtService _jwtService;
+    private readonly IAuthService         _authService;
+    private readonly IJwtService          _jwtService;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IUserRepository userRepo, IJwtService jwtService, ILogger<AuthController> logger)
+    public AuthController(IAuthService authService, IJwtService jwtService, ILogger<AuthController> logger)
     {
-        _userRepo = userRepo;
-        _jwtService = jwtService;
-        _logger = logger;
+        _authService = authService;
+        _jwtService  = jwtService;
+        _logger      = logger;
     }
 
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest request)
     {
-        _logger.LogInformation("Registration attempt for {Username}", request.Username);
-
-        var exists = await _userRepo.GetByUsernameAsync(request.Username);
-        if (exists != null)
+        if (string.IsNullOrWhiteSpace(request.Username))
         {
-            _logger.LogWarning("Registration failed - user exists: {Username}", request.Username);
-            return BadRequest(new { message = "User already exists" });
+            return BadRequest(new { message = "Username is required" });
         }
 
-        var user = new User
+        if (string.IsNullOrWhiteSpace(request.Password))
         {
-            Username = request.Username,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
-        };
+            return BadRequest(new { message = "Password is required" });
+        }
+        
+        _logger.LogInformation("Registration attempt for {Username}", request.Username);
 
-        await _userRepo.AddAsync(user);
+        var result = await _authService.RegisterAsync(request.Username, request.Password);
+
+        if (!result.Success)
+        {
+            _logger.LogWarning("Registration failed for {Username}: {Error}", request.Username, result.Error);
+            return BadRequest(new { message = result.Error });
+        }
+
         _logger.LogInformation("User registered: {Username}", request.Username);
-
-        var token = _jwtService.GenerateToken(user.Id, user.Username);
+        var token = _jwtService.GenerateToken(result.UserId, result.Username);
 
         return Ok(new AuthResponse
         {
-            Token = token,
-            Username = user.Username,
-            UserId = user.Id
+            Token    = token,
+            Username = result.Username,
+            UserId   = result.UserId
         });
     }
 
@@ -57,27 +64,22 @@ public class AuthController : ControllerBase
     {
         _logger.LogInformation("Login attempt for {Username}", request.Username);
 
-        var user = await _userRepo.GetByUsernameAsync(request.Username);
-        if (user == null)
+        var result = await _authService.LoginAsync(request.Username, request.Password);
+
+        if (!result.Success)
         {
-            _logger.LogWarning("Login failed - user not found: {Username}", request.Username);
-            return Unauthorized(new { message = "Invalid credentials" });
+            _logger.LogWarning("Login failed for {Username}: {Error}", request.Username, result.Error);
+            return Unauthorized(new { message = result.Error });
         }
 
-        if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-        {
-            _logger.LogWarning("Login failed - invalid password: {Username}", request.Username);
-            return Unauthorized(new { message = "Invalid credentials" });
-        }
-
-        var token = _jwtService.GenerateToken(user.Id, user.Username);
         _logger.LogInformation("User logged in: {Username}", request.Username);
+        var token = _jwtService.GenerateToken(result.UserId, result.Username);
 
         return Ok(new AuthResponse
         {
-            Token = token,
-            Username = user.Username,
-            UserId = user.Id
+            Token    = token,
+            Username = result.Username,
+            UserId   = result.UserId
         });
     }
 }

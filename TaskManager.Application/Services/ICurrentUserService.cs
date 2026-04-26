@@ -1,6 +1,6 @@
 ﻿namespace TaskManager.Application.Services;
 
-public interface ICurrentUserService
+public interface ICurrentUserService : ICurrentUserContext
 {
     Guid? CurrentUserId { get; set; }
     string? CurrentUsername { get; set; }

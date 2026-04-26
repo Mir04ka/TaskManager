@@ -8,7 +8,7 @@ namespace TaskManager.Application.Services;
 public class TaskService : ITaskService
 {
     private readonly ITaskRepository _repo;
-    private readonly ICurrentUserService _currentUser;
+    private readonly ICurrentUserContext _currentUser;
     private readonly ILogger<TaskService> _logger;
     
     public TaskService(ITaskRepository repo, ICurrentUserService currentUser, ILogger<TaskService> logger)
@@ -20,9 +20,13 @@ public class TaskService : ITaskService
 
     public async Task<PagedResult<TaskItem>> GetCurrentUserTasksAsync(int pageNumber, int pageSize)
     {
+        pageNumber = pageNumber < 1 ? 1 : pageNumber;
+        pageSize = pageSize < 1 ? 10 : pageSize;
+        pageSize = pageSize > 100 ? 100 : pageSize;
+        
         if (_currentUser.CurrentUserId == null)
         {
-            _logger.LogWarning("Attempted  to get tasks without logged in user");
+            _logger.LogWarning("Attempted to get tasks without logged in user");
             return new PagedResult<TaskItem>
             {
                 Items = new List<TaskItem>(),
@@ -57,7 +61,6 @@ public class TaskService : ITaskService
 
     public async Task UpdateAsync(TaskItem item)
     {
-        // Preserve the current user's ID
         if (_currentUser.CurrentUserId != null)
             item.UserId = _currentUser.CurrentUserId.Value;
         
