@@ -2,6 +2,6 @@
 
 public interface ICurrentUserContext
 {
-    Guid?   CurrentUserId   { get; }
-    string? CurrentUsername { get; }
+    Guid?   CurrentUserId   { get; set; }
+    string? CurrentUsername { get; set; }
 }
