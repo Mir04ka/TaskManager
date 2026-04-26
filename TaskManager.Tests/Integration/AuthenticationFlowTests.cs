@@ -7,6 +7,7 @@ using Moq;
 using TaskManager.API.Controllers;
 using TaskManager.API.DTOs;
 using TaskManager.API.Services;
+using TaskManager.Application.Services;
 using TaskManager.Infrastructure.Data;
 using TaskManager.Infrastructure.Repositories;
 using Xunit;
@@ -27,6 +28,11 @@ public class AuthenticationFlowTests : IDisposable
         _context = new AppDbContext(options);
 
         var userRepository = new UserRepository(_context);
+        var currentUserMock = new Mock<ICurrentUserService>();
+        var authService = new AuthService(
+            userRepository,
+            currentUserMock.Object,
+            NullLogger<AuthService>.Instance);
 
         var configMock = new Mock<IConfiguration>();
         configMock.Setup(c => c["Jwt:Key"]).Returns("YourSuperSecretKeyThatIsAtLeast32CharactersLong!");
@@ -37,7 +43,10 @@ public class AuthenticationFlowTests : IDisposable
         var jwtService = new JwtService(configMock.Object);
         var logger = NullLogger<AuthController>.Instance;
 
-        _controller = new AuthController(userRepository, jwtService, logger);
+        _controller = new AuthController(
+            authService,
+            jwtService,
+            NullLogger<AuthController>.Instance);
     }
 
     [Fact]

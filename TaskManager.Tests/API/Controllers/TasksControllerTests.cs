@@ -7,24 +7,24 @@ using System.Security.Claims;
 using TaskManager.API.Controllers;
 using TaskManager.API.DTOs;
 using TaskManager.Application.Common;
+using TaskManager.Application.Services;
 using TaskManager.Domain.Entities;
-using TaskManager.Domain.Interfaces;
 using Xunit;
 
 namespace TaskManager.Tests.API.Controllers;
 
 public class TasksControllerTests
 {
-    private readonly Mock<ITaskRepository> _taskRepositoryMock;
+    private readonly Mock<ITaskService> _taskServiceMock;
     private readonly Mock<ILogger<TasksController>> _loggerMock;
     private readonly TasksController _controller;
     private readonly Guid _testUserId;
 
     public TasksControllerTests()
     {
-        _taskRepositoryMock = new Mock<ITaskRepository>();
+        _taskServiceMock = new Mock<ITaskService>();
         _loggerMock = new Mock<ILogger<TasksController>>();
-        _controller = new TasksController(_taskRepositoryMock.Object, _loggerMock.Object);
+        _controller = new TasksController(_taskServiceMock.Object, _loggerMock.Object);
         _testUserId = Guid.NewGuid();
 
         // Setup user claims
@@ -51,8 +51,8 @@ public class TasksControllerTests
             new TaskItem { Id = Guid.NewGuid(), Title = "Task 2", Description = "Desc 2", UserId = _testUserId }
         };
 
-        _taskRepositoryMock
-            .Setup(x => x.GetByUserIdAsync(_testUserId, 1, 10))
+        _taskServiceMock
+            .Setup(x => x.GetCurrentUserTasksAsync(1, 10))
             .ReturnsAsync(new PagedResult<TaskItem>
             {
                 Items = tasks,
@@ -97,8 +97,8 @@ public class TasksControllerTests
         dto!.Title.Should().Be("New Task");
         dto.Description.Should().Be("New Description");
 
-        _taskRepositoryMock.Verify(x => x.AddAsync(It.Is<TaskItem>(
-            t => t.Title == "New Task" && t.UserId == _testUserId
+        _taskServiceMock.Verify(x => x.AddAsync(It.Is<TaskItem>(
+            t => t.Title == "New Task"
         )), Times.Once);
     }
 
@@ -119,8 +119,8 @@ public class TasksControllerTests
         // Assert
         result.Should().BeOfType<NoContentResult>();
 
-        _taskRepositoryMock.Verify(x => x.UpdateAsync(It.Is<TaskItem>(
-            t => t.Id == taskId && t.Title == "Updated Task" && t.UserId == _testUserId
+        _taskServiceMock.Verify(x => x.UpdateAsync(It.Is<TaskItem>(
+            t => t.Id == taskId && t.Title == "Updated Task"
         )), Times.Once);
     }
 
@@ -135,6 +135,6 @@ public class TasksControllerTests
 
         // Assert
         result.Should().BeOfType<NoContentResult>();
-        _taskRepositoryMock.Verify(x => x.DeleteAsync(taskId), Times.Once);
+        _taskServiceMock.Verify(x => x.DeleteAsync(taskId), Times.Once);
     }
 }

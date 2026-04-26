@@ -7,6 +7,7 @@ using Microsoft.OpenApi;
 using TaskManager.API.Middleware;
 using TaskManager.API.Services;
 using TaskManager.Domain.Interfaces;
+using TaskManager.Application.Services;
 using TaskManager.Infrastructure.Data;
 using TaskManager.Infrastructure.Repositories;
 
@@ -95,6 +96,14 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 
 // Services
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<HttpCurrentUserService>();
+builder.Services.AddScoped<ICurrentUserService>(sp => sp.GetRequiredService<HttpCurrentUserService>());
+builder.Services.AddScoped<ICurrentUserContext>(sp => sp.GetRequiredService<HttpCurrentUserService>());
+
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+
 builder.Services.AddScoped<IJwtService, JwtService>();
 
 var app = builder.Build();
