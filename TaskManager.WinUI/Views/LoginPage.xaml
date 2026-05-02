@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="TaskManager.WinUI.Views.LoginPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TaskManager.WinUI.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <local:BoolToVisibilityConverter        x:Key="BoolToVisConverter"/>
+        <local:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisConverter"/>
+    </Page.Resources>
+
+    <Grid>
+        <StackPanel Width="320"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="8">
+            
+            <!-- Lang selector -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="6">
+                <TextBlock Text="🌐" FontSize="16" VerticalAlignment="Center"/>
+                <ComboBox ItemsSource="{Binding Loc.AvailableLanguages}"
+                          SelectedItem="{Binding Loc.SelectedLanguage, Mode=TwoWay}"
+                          Width="120"/>
+            </StackPanel>
+            
+            <!-- User data -->
+            <TextBlock Text="{Binding Loc[Username]}"/>
+            <TextBox Text="{Binding Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Text="{Binding Loc[Password]}"/>
+            <PasswordBox x:Name="PwdBox"/>
+            
+            <!-- Sign in/out -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Spacing="8"
+                        Margin="0,8,0,0">
+                <Button Content="{Binding Loc[Login]}"
+                        MinWidth="140" MinHeight="44"
+                        Click="OnLoginClick"/>
+                <Button Content="{Binding Loc[Register]}"
+                        MinWidth="140" MinHeight="44"
+                        Click="OnRegisterClick"/>
+            </StackPanel>
+
+            <TextBlock Text="{Binding StatusMessage}"
+                       Foreground="Red"
+                       TextWrapping="Wrap"/>
+
+        </StackPanel>
+    </Grid>
+</Page>

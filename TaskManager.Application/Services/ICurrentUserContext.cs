@@ -1,4 +1,4 @@
-﻿namespace TaskManager.Application.Services;
+﻿namespace TaskManager.AppCore.Services;
 
 public interface ICurrentUserContext
 {

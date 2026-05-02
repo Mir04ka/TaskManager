@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TaskManager.API.DTOs;
 using TaskManager.API.Services;
-using TaskManager.Application.Services;
+using TaskManager.AppCore.Services;
 
 namespace TaskManager.API.Controllers;
 

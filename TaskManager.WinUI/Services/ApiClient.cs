@@ -1,19 +1,23 @@
-﻿using System.Net.Http;
-using System.Net.Http.Headers;
-using Microsoft.Extensions.Logging;
-using RestEase;
+﻿using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
+using RestEase;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 using TaskManager.AppCore.Common;
-using TaskManager.UI.Models;
+using TaskManager.WinUI.Models;
 
-namespace TaskManager.UI.Services;
+namespace TaskManager.WinUI.Services;
 
 public class ApiClient : IApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<ApiClient> _logger;
     private readonly ITasksApi _api;
+
     private readonly AsyncRetryPolicy _retryPolicy = Policy
         .Handle<ApiException>()
         .WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
@@ -21,32 +25,25 @@ public class ApiClient : IApiClient
     public ApiClient(HttpClient httpClient, ILogger<ApiClient> logger)
     {
         _httpClient = httpClient;
-        _httpClient.BaseAddress = new Uri("http://localhost:5217/api/"); // http only
+        _httpClient.BaseAddress = new Uri("http://localhost:5000/api/"); // http only
         _logger = logger;
         _api = RestClient.For<ITasksApi>(_httpClient);
     }
 
     public void SetToken(string token)
-    {
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-    }
+        => _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-    private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action)
-    {
-        return await _retryPolicy.ExecuteAsync(action);
-    }
+    private Task<T> WithRetryAsync<T>(Func<Task<T>> action)
+        => _retryPolicy.ExecuteAsync(action);
 
-    private async Task ExecuteWithRetryAsync(Func<Task> action)
-    {
-        await _retryPolicy.ExecuteAsync(action);
-    }
+    private Task WithRetryAsync(Func<Task> action)
+        => _retryPolicy.ExecuteAsync(action);
     
     public async Task<bool> ValidateTokenAsync()
     {
         try
         {
-            // Light call to validate token (existing endpoint semantics preserved)
-            var _ = await ExecuteWithRetryAsync(() => _api.GetTasksAsync(1, 1));
+            await WithRetryAsync(() => _api.GetTasksAsync(1, 1));
             return true;
         }
         catch
@@ -59,8 +56,8 @@ public class ApiClient : IApiClient
     {
         try
         {
-            var request = new LoginRequest { Username = username, Password = password };
-            var resp = await ExecuteWithRetryAsync(() => _api.LoginAsync(request));
+            var resp = await WithRetryAsync(() 
+                => _api.LoginAsync(new LoginRequest { Username = username, Password = password }));
             if (resp != null)
             {
                 SetToken(resp.Token);
@@ -83,8 +80,7 @@ public class ApiClient : IApiClient
     {
         try
         {
-            var request = new RegisterRequest { Username = username, Password = password };
-            var resp = await ExecuteWithRetryAsync(() => _api.RegisterAsync(request));
+            var resp = await WithRetryAsync(() => _api.RegisterAsync(new RegisterRequest { Username = username, Password = password }));
             if (resp != null)
             {
                 SetToken(resp.Token);
@@ -107,18 +103,19 @@ public class ApiClient : IApiClient
     {
         try
         {
-            var result = await ExecuteWithRetryAsync(() => _api.GetTasksAsync(pageNumber, pageSize));
-            return result;
-        }
-        catch (ApiException ex)
-        {
-            _logger.LogWarning("GetTasks failed with status {StatusCode}", ex.StatusCode);
-            return new PagedResult<TaskItemDto> { Items = new List<TaskItemDto>(), TotalCount = 0, PageNumber = pageNumber, PageSize = pageSize };
+            return await WithRetryAsync(() 
+                => _api.GetTasksAsync(pageNumber, pageSize));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting tasks");
-            return new PagedResult<TaskItemDto> { Items = new List<TaskItemDto>(), TotalCount = 0, PageNumber = pageNumber, PageSize = pageSize };
+            return new PagedResult<TaskItemDto> 
+            { 
+                Items = new List<TaskItemDto>(), 
+                TotalCount = 0, 
+                PageNumber = pageNumber, 
+                PageSize = pageSize 
+            };
         }
     }
 
@@ -126,14 +123,9 @@ public class ApiClient : IApiClient
     {
         try
         {
-            var request = new CreateTaskRequest { Title = title, Description = description };
-            var result = await ExecuteWithRetryAsync(() => _api.CreateTaskAsync(request));
+            var result = await WithRetryAsync(() 
+                => _api.CreateTaskAsync(new CreateTaskRequest { Title = title, Description = description }));
             return result;
-        }
-        catch (ApiException ex)
-        {
-            _logger.LogWarning("CreateTask failed with status {StatusCode}", ex.StatusCode);
-            return null;
         }
         catch (Exception ex)
         {
@@ -146,13 +138,7 @@ public class ApiClient : IApiClient
     {
         try
         {
-            var request = new UpdateTaskRequest { Title = title, Description = description };
-            await ExecuteWithRetryAsync(() => _api.UpdateTaskAsync(id, request));
-        }
-        catch (ApiException ex)
-        {
-            _logger.LogWarning("UpdateTask failed with status {StatusCode}", ex.StatusCode);
-            throw;
+            await WithRetryAsync(() => _api.UpdateTaskAsync(id, new UpdateTaskRequest { Title = title, Description = description }));
         }
         catch (Exception ex)
         {
@@ -165,12 +151,7 @@ public class ApiClient : IApiClient
     {
         try
         {
-            await ExecuteWithRetryAsync(() => _api.DeleteTaskAsync(id));
-        }
-        catch (ApiException ex)
-        {
-            _logger.LogWarning("DeleteTask failed with status {StatusCode}", ex.StatusCode);
-            throw;
+            await WithRetryAsync(() => _api.DeleteTaskAsync(id));
         }
         catch (Exception ex)
         {

@@ -1,4 +1,4 @@
-﻿namespace TaskManager.Application.Common;
+﻿namespace TaskManager.AppCore.Common;
 
 public class AuthResult
 {

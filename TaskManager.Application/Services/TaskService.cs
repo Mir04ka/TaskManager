@@ -1,9 +1,9 @@
 ﻿using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
-using TaskManager.Application.Common;
+using TaskManager.AppCore.Common;
 
-namespace TaskManager.Application.Services;
+namespace TaskManager.AppCore.Services;
 
 public class TaskService : ITaskService
 {

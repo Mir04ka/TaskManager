@@ -7,7 +7,7 @@ using Microsoft.OpenApi;
 using TaskManager.API.Middleware;
 using TaskManager.API.Services;
 using TaskManager.Domain.Interfaces;
-using TaskManager.Application.Services;
+using TaskManager.AppCore.Services;
 using TaskManager.Infrastructure.Data;
 using TaskManager.Infrastructure.Repositories;
 

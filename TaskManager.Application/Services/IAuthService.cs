@@ -1,6 +1,6 @@
-using TaskManager.Application.Common;
+using TaskManager.AppCore.Common;
 
-namespace TaskManager.Application.Services;
+namespace TaskManager.AppCore.Services;
 
 public interface IAuthService
 {

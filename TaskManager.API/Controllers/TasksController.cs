@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManager.API.DTOs;
-using TaskManager.Application.Common;
-using TaskManager.Application.Services;
+using TaskManager.AppCore.Common;
+using TaskManager.AppCore.Services;
 using TaskManager.Domain.Entities;
 
 namespace TaskManager.API.Controllers;

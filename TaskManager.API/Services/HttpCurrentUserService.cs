@@ -1,5 +1,5 @@
 ﻿using System.Security.Claims;
-using TaskManager.Application.Services;
+using TaskManager.AppCore.Services;
 
 namespace TaskManager.API.Services;
 

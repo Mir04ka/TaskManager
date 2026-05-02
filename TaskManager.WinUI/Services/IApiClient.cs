@@ -1,7 +1,9 @@
-﻿using TaskManager.AppCore.Common;
-using TaskManager.UI.Models;
+﻿using System;
+using System.Threading.Tasks;
+using TaskManager.AppCore.Common;
+using TaskManager.WinUI.Models;
 
-namespace TaskManager.UI.Services;
+namespace TaskManager.WinUI.Services;
 
 public interface IApiClient
 {

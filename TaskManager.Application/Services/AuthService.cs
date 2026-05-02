@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
-using TaskManager.Application.Common;
+using TaskManager.AppCore.Common;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
 
-namespace TaskManager.Application.Services;
+namespace TaskManager.AppCore.Services;
 
 public class AuthService : IAuthService
 {
