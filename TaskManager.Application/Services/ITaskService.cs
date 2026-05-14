@@ -6,6 +6,8 @@ namespace TaskManager.AppCore.Services;
 public interface ITaskService
 {
     Task<PagedResult<TaskItem>> GetCurrentUserTasksAsync(int pageNumber, int pageSize);
+    Task<PagedResult<TaskItem>> GetByProcessIdAsync(Guid processId, int pageNumber, int pageSize);
+    Task<TaskItem?> GetByIdAsync(Guid id);
     Task<TaskItem> CreateAsync(TaskItem item);
     Task UpdateAsync(TaskItem item);
     Task DeleteAsync(Guid id);

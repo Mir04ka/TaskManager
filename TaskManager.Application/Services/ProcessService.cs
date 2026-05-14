@@ -3,7 +3,7 @@ using TaskManager.AppCore.Services;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
 
-namespace TaskManager.Application.Services;
+namespace TaskManager.AppCore.Services;
 
 public class ProcessService : IProcessService
 {

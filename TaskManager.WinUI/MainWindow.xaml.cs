@@ -33,7 +33,7 @@ public sealed partial class MainWindow : Window
             if (autoLoginSuccess)
             {
                 _logger.LogInformation("Auto login successful");
-                _navigationService.NavigateTo<TaskPage>();
+                _navigationService.NavigateTo<MainPage>();
             }
             else
             {

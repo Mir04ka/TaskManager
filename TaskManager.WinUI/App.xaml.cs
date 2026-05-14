@@ -4,9 +4,10 @@ using Microsoft.UI.Xaml;
 using Serilog;
 using System;
 using System.Net.Http;
-using TaskManager.WinUI.ViewModels;
 using TaskManager.WinUI.Localization;
 using TaskManager.WinUI.Services;
+using TaskManager.WinUI.Services.State;
+using TaskManager.WinUI.ViewModels;
 
 namespace TaskManager.WinUI;
 
@@ -53,9 +54,13 @@ public partial class App : Application
         services.AddSingleton<INavigationService, NavigationService>();
 
         services.AddSingleton<LocalizationService>();
+        services.AddSingleton<WorkspaceState>();
 
         services.AddSingleton<LoginViewModel>();
-        services.AddSingleton<TaskViewModel>();
+        services.AddSingleton<MainViewModel>();
+
+        services.AddSingleton<ProcessListViewModel>();
+        services.AddSingleton<TaskListViewModel>();
 
         services.AddSingleton<MainWindow>();
 

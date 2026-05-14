@@ -5,11 +5,6 @@ using TaskManager.AppCore.Services;
 
 namespace TaskManager.API.Controllers;
 
-/// <summary>
-/// SRP: This controller only handles HTTP concerns (routing, status codes, DTO mapping).
-/// All auth business logic (password hashing, user existence checks) lives in IAuthService.
-/// DIP: Depends on IAuthService (Application abstraction) not on IUserRepository (Infrastructure).
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase

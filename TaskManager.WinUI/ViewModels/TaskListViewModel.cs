@@ -1,23 +1,26 @@
-﻿/*
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using TaskManager.Domain.Entities;
 using TaskManager.WinUI.Localization;
 using TaskManager.WinUI.Models;
 using TaskManager.WinUI.Services;
-using TaskManager.WinUI.Views;
+using TaskManager.WinUI.Services.State;
 
 namespace TaskManager.WinUI.ViewModels;
 
-public sealed partial class TaskViewModel : BaseViewModel
+public sealed partial class TaskListViewModel : BaseViewModel
 {
     private readonly IApiClient _apiClient;
-    private readonly ILogger<TaskViewModel> _logger;
-    private readonly INavigationService _navigationService;
-    private readonly IAuthService _authService;
+    private readonly ILogger<TaskListViewModel> _logger;
+    private readonly WorkspaceState _state;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TotalPages))]
@@ -36,96 +39,58 @@ public sealed partial class TaskViewModel : BaseViewModel
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 
     public ObservableCollection<TaskItemVm> Tasks { get; } = [];
-    public ObservableCollection<ProcessItemVm> Processes { get; } = [];
 
-    public LocalizationService Loc { get; }
-
-    public TaskViewModel(
-        IApiClient apiClient, 
-        IAuthService authService,
-        INavigationService navigationService, 
-        ILogger<TaskViewModel> logger,
-        LocalizationService localization)
+    public TaskListViewModel(
+        IApiClient apiClient,
+        ILogger<TaskListViewModel> logger,
+        WorkspaceState state)
     {
         _apiClient = apiClient;
-        _authService = authService;
-        _navigationService = navigationService;
         _logger = logger;
-        Loc = localization;
+        _state = state;
 
-        OnPropertyChanged(nameof(Loc));
-
-        Loc.LanguageChanged += () =>
-        {
-            OnPropertyChanged(nameof(Loc));
-        };
+        _state.PropertyChanged += OnStateChanged;
     }
 
-    //public async Task LoadAsync()
-    //{
-    //    try
-    //    {
-    //        var result  = await _apiClient.GetTasksAsync(PageNumber, PageSize);
-    //        Tasks.Clear();
-
-    //        foreach (var item in result.Items)
-    //        {
-    //            Tasks.Add(new TaskItemVm(this, _apiClient)
-    //            {
-    //                Id = item.Id,
-    //                Title = item.Title,
-    //                Description = item.Description,
-    //            });
-    //        }
-            
-    //        TotalCount = result.TotalCount;
-
-    //        _logger.LogInformation("Loaded page {Page} with {Count} tasks", PageNumber, Tasks.Count);
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        _logger.LogError(ex, "Error loading tasks");
-    //    }
-    //}
-
-    [RelayCommand]
-    private async Task AddTask()
+    private async void OnStateChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(WorkspaceState.SelectedProcess))
+        {
+            await LoadAsync(_state.SelectedProcess?.Id);
+        }
+    }
+
+    public async Task LoadAsync(Guid? processId)
+    {
+        if (processId == null)
+        {
+            _logger.LogInformation("No process selected");
+            return;
+        }
+            
         try
         {
-            var newTask = await _apiClient.CreateTaskAsync(new CreateTaskRequest()
-            {
-                Title = "New task",
-                Description = string.Empty,
-                ProcessId = Guid.NewGuid(),
-                AssignedToUserId = null,
-                Deadline = DateTime.UtcNow,
-            });
+            var result = await _apiClient.GetTasksAsync(PageNumber, PageSize);
+            Tasks.Clear();
 
-            if (newTask != null)
+            foreach (var item in result.Items)
             {
                 Tasks.Add(new TaskItemVm(this, _apiClient)
                 {
-                    Id = newTask.Id,
-                    Title = newTask.Title,
-                    Description = newTask.Description
+                    Id = item.Id,
+                    Title = item.Title,
+                    Description = item.Description,
                 });
             }
+
+            TotalCount = result.TotalCount;
+
+            _logger.LogInformation("Loaded page {Page} with {Count} tasks", PageNumber, Tasks.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error adding task");
+            _logger.LogError(ex, "Error loading tasks");
         }
-    }
-
-    [RelayCommand]
-    private async Task Refresh() => await LoadAsync();
-
-    [RelayCommand]
-    private void Logout()
-    {
-        _authService.Logout();
-        _navigationService.NavigateAndClearBackStack<LoginPage>();
     }
 
     [RelayCommand(CanExecute = nameof(CanGoNext))]
@@ -134,7 +99,7 @@ public sealed partial class TaskViewModel : BaseViewModel
         if (PageNumber < TotalPages)
         {
             PageNumber++;
-            await LoadAsync();
+            await LoadAsync(_state.SelectedProcess.Id);
         }
     }
     private bool CanGoNext() => PageNumber < TotalPages;
@@ -145,27 +110,16 @@ public sealed partial class TaskViewModel : BaseViewModel
         if (PageNumber > 1)
         {
             PageNumber--;
-            await LoadAsync();
+            await LoadAsync(_state.SelectedProcess.Id);
         }
     }
     private bool CanGoPrev() => PageNumber > 1;
-
-    public void RemoveTask(TaskItemVm task) => Tasks.Remove(task);
-}
-/*
-public sealed partial class ProcessItemVm : ObservableObject
-{
-    public Guid Id { get; set; }
-
-    [ObservableProperty]
-    public string _name = string.Empty;
 }
 
 public sealed partial class TaskItemVm : ObservableObject
 {
-    private readonly TaskViewModel _parent;
+    private readonly TaskListViewModel _parent;
     private readonly IApiClient _apiClient;
-    public LocalizationService Loc => _parent.Loc;
 
     private string _originalTitle = string.Empty;
     private string _originalDescription = string.Empty;
@@ -189,7 +143,7 @@ public sealed partial class TaskItemVm : ObservableObject
     [ObservableProperty]
     private bool _isEditing;
 
-    public TaskItemVm(TaskViewModel parent, IApiClient apiClient)
+    public TaskItemVm(TaskListViewModel parent, IApiClient apiClient)
     {
         _parent = parent;
         _apiClient = apiClient;
@@ -239,7 +193,7 @@ public sealed partial class TaskItemVm : ObservableObject
         try
         {
             await _apiClient.DeleteTaskAsync(Id);
-            _parent.RemoveTask(this);
+            //_parent.RemoveTask(this);
         }
         catch (Exception ex)
         {
@@ -247,4 +201,3 @@ public sealed partial class TaskItemVm : ObservableObject
         }
     }
 }
-*/

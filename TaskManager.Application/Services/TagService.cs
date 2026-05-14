@@ -1,14 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
-using System.Data;
-using System.Diagnostics;
-using System.Xml.Linq;
 using TaskManager.AppCore.Services;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
 
-namespace TaskManager.Application.Services;
+namespace TaskManager.AppCore.Services;
 
-public class TagService
+public class TagService : ITagService
 {
     private readonly ITagRepository _tagRepo;
     private readonly IProcessRepository _processRepo;
@@ -29,15 +26,19 @@ public class TagService
 
     private Guid CurrentUserId => _currentUser.CurrentUserId ?? throw new UnauthorizedAccessException();
 
-    private async Task CheckAdmin(Guid processId)
+    private async Task CheckAdminAsync(Guid processId)
     {
         var role = await _processRepo.GetUserRoleAsync(processId, CurrentUserId);
 
         if (role == null)
+        {
             throw new UnauthorizedAccessException("User not in process");
+        }
 
         if (role.Role != ProcessRole.Admin)
-            throw new UnauthorizedAccessException("User is not admin");
+        {
+            throw new UnauthorizedAccessException("Only process admin can manage tags");
+        }
     }
 
     public async Task<List<TaskTag>> GetByProcessIdAsync(Guid processId)
@@ -51,12 +52,12 @@ public class TagService
 
         _logger.LogInformation("Getting all tags");
 
-        return await _tagRepo.GetAllAsync();
+        return await _tagRepo.GetByProcessIdAsync(processId);
     }
 
     public async Task<TaskTag> CreateAsync(Guid processId, string name)
     {
-        await CheckAdmin(processId);
+        await CheckAdminAsync(processId);
 
         var tag = new TaskTag
         {
@@ -65,21 +66,24 @@ public class TagService
             ProcessId = processId
         };
 
-        _logger.LogInformation("Creating new tag: {TagName}", name);
+        _logger.LogInformation("Creating tag: {TagName} in process: {ProcessId}", name, processId);
 
         await _tagRepo.AddAsync(tag);
 
         return tag;
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(Guid processId, Guid tagId)
     {
-        var tag = await _tagRepo.GetByIdAsync(id) ?? throw new Exception("Tag not found");
+        await CheckAdminAsync(processId);
 
-        await CheckAdmin(tag.ProcessId);
+        var tag = await _tagRepo.GetByIdAsync(tagId) ?? throw new Exception("Tag not found");
 
-        _logger.LogInformation("Deleting tag: {TagId}", id);
+        if (tag.ProcessId != processId)
+            throw new UnauthorizedAccessException("Tag does not belong to this process");
 
-        await _tagRepo.DeleteAsync(id);
+        _logger.LogInformation("Deleting tag: {TagId}", tagId);
+
+        await _tagRepo.DeleteAsync(tagId);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using TaskManager.AppCore.Common;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
@@ -8,25 +9,31 @@ namespace TaskManager.AppCore.Services;
 public class TaskService : ITaskService
 {
     private readonly ITaskRepository _taskRepo;
+    private readonly ITagRepository _tagRepo;
     private readonly IProcessRepository _processRepo;
     private readonly ICurrentUserContext _currentUser;
     private readonly ILogger<TaskService> _logger;
 
     public TaskService(
         ITaskRepository taskRepo,
+        ITagRepository tagRepo,
         IProcessRepository processRepo,
         ICurrentUserService currentUser,
         ILogger<TaskService> logger)
     {
         _taskRepo = taskRepo;
+        _tagRepo = tagRepo;
         _processRepo = processRepo;
         _currentUser = currentUser;
         _logger = logger;
     }
 
-    private async Task CheckAdmin(Guid processId)
+    private Guid GetCurrentUserId()
+        => _currentUser.CurrentUserId ?? throw new UnauthorizedAccessException();
+
+    private async Task CheckAdminAsync(Guid processId)
     {
-        var userId = _currentUser.CurrentUserId ?? throw new UnauthorizedAccessException();
+        var userId = GetCurrentUserId();
         var role = await _processRepo.GetUserRoleAsync(processId, userId);
 
         if (role == null)
@@ -40,11 +47,6 @@ public class TaskService : ITaskService
         }
     }
 
-    private Guid GetCurrentUserId()
-    {
-        return _currentUser.CurrentUserId ?? throw new UnauthorizedAccessException();
-    }
-
     private async Task<TaskItem> GetTask(Guid taskId)
     {
         return await _taskRepo.GetByIdAsync(taskId) ?? throw new Exception("Task not found");
@@ -55,7 +57,7 @@ public class TaskService : ITaskService
         pageNumber = pageNumber < 1 ? 1 : pageNumber;
         pageSize = pageSize < 1 ? 10 : pageSize;
         pageSize = pageSize > 100 ? 100 : pageSize;
-        
+
         if (_currentUser.CurrentUserId == null)
         {
             _logger.LogWarning("Attempted to get tasks without logged in user");
@@ -67,25 +69,52 @@ public class TaskService : ITaskService
                 PageSize = pageSize
             };
         }
-        
-        var userId = _currentUser.CurrentUserId.Value;
 
+        var userId = _currentUser.CurrentUserId.Value;
         _logger.LogInformation("Loading tasks for user: {UserId}, page {Page}, size {Size}",
             userId, pageNumber, pageSize);
 
-        var result = await _taskRepo.GetByUserIdAsync(userId, pageNumber, pageSize);
-        
-        _logger.LogInformation("Loaded {Count} tasks for user: {UserId}",
-            result.Items.Count, userId);
-
-        return result;
+        return await _taskRepo.GetByUserIdAsync(userId, pageNumber, pageSize);
     }
-    
+
+    public async Task<PagedResult<TaskItem>> GetByProcessIdAsync(Guid processId, int pageNumber, int pageSize)
+    {
+        pageNumber = pageNumber < 1 ? 1 : pageNumber;
+        pageSize = pageSize < 1 ? 10 : pageSize;
+        pageSize = pageSize > 100 ? 100 : pageSize;
+
+        var userId = GetCurrentUserId();
+        var role = await _processRepo.GetUserRoleAsync(processId, userId);
+
+        if (role == null)
+            throw new UnauthorizedAccessException("User is not in process");
+
+        _logger.LogInformation("Loading tasks for process: {ProcessId}", processId);
+
+        return await _taskRepo.GetByProcessIdAsync(processId, pageNumber, pageSize);
+    }
+
+    public async Task<TaskItem?> GetByIdAsync(Guid id)
+    {
+        var task = await _taskRepo.GetByIdAsync(id);
+        if (task == null) return null;
+
+        var userId = GetCurrentUserId();
+        var role = await _processRepo.GetUserRoleAsync(task.ProcessId, userId);
+
+        if (role == null)
+        {
+            throw new UnauthorizedAccessException("User is not in process");
+        }
+
+        return task;
+    }
+
     public async Task<TaskItem> CreateAsync(TaskItem item)
     {
         var userId = GetCurrentUserId();
 
-        await CheckAdmin(item.ProcessId);
+        await CheckAdminAsync(item.ProcessId);
 
         item.AssignedByUserId = userId;
 
@@ -100,17 +129,16 @@ public class TaskService : ITaskService
 
     public async Task UpdateAsync(TaskItem item)
     {
-        var userId = GetCurrentUserId();
         var task = await GetTask(item.Id);
 
-        await CheckAdmin(task.ProcessId);
+        await CheckAdminAsync(task.ProcessId);
 
         task.Title = item.Title;
         task.Description = item.Description;
         task.Deadline = item.Deadline;
         task.Status = item.Status;
 
-        _logger.LogInformation("Updating task: {TaskId} by user: {UserId}", item.Id, userId);
+        _logger.LogInformation("Updating task: {TaskId}", item.Id);
 
         await _taskRepo.UpdateAsync(task);
 
@@ -119,12 +147,11 @@ public class TaskService : ITaskService
 
     public async Task DeleteAsync(Guid id)
     {
-        var userId = GetCurrentUserId();
         var task = await GetTask(id);
 
-        await CheckAdmin(task.ProcessId);
+        await CheckAdminAsync(task.ProcessId);
 
-        _logger.LogInformation("Deleting task: {TaskId} by user: {UserId}", id, userId);
+        _logger.LogInformation("Deleting task: {TaskId}", id);
 
         await _taskRepo.DeleteAsync(id);
 
@@ -136,7 +163,7 @@ public class TaskService : ITaskService
         var userId = GetCurrentUserId();
         var task = await GetTask(taskId);
 
-        await CheckAdmin(task.ProcessId);
+        await CheckAdminAsync(task.ProcessId);
 
         var targetRole = await _processRepo.GetUserRoleAsync(task.ProcessId, targetUserId);
 
@@ -159,26 +186,29 @@ public class TaskService : ITaskService
 
         if (task.AssignedToUserId != userId)
         {
-            await CheckAdmin(task.ProcessId);
+            await CheckAdminAsync(task.ProcessId);
         }
-
-        task.Status = status;
 
         _logger.LogInformation("Changing task status to {Status} by user: {UserId}", status.ToString(), userId);
 
-        await _taskRepo.UpdateAsync(task);
+        await _taskRepo.UpdateStatusAsync(taskId, status);
 
         _logger.LogInformation("Task status changed successfully: {TaskId}", taskId);
     }
 
     public async Task AddTagAsync(Guid taskId, Guid tagId)
     {
-        var userId = GetCurrentUserId();
         var task = await GetTask(taskId);
+        var tag = await _tagRepo.GetByIdAsync(tagId) ?? throw new Exception("Tag not found");
 
-        await CheckAdmin(task.ProcessId);
+        if (tag.ProcessId != task.ProcessId)
+        {
+            throw new UnauthorizedAccessException("Tag does not belong to process");
+        }
 
-        _logger.LogInformation("Adding tag: {TagId} to task: {TaskId} by user: {UserId}", tagId, taskId, userId);
+        await CheckAdminAsync(task.ProcessId);
+
+        _logger.LogInformation("Adding tag: {TagId} to task: {TaskId}", tagId, taskId);
 
         await _taskRepo.AddTagAsync(taskId, tagId);
 
@@ -187,14 +217,19 @@ public class TaskService : ITaskService
 
     public async Task RemoveTagAsync(Guid taskId, Guid tagId)
     {
-        var userId = GetCurrentUserId();
         var task = await GetTask(taskId);
+        var tag = await _tagRepo.GetByIdAsync(tagId) ?? throw new Exception("Tag not found");
 
-        await CheckAdmin(task.ProcessId);
+        if (tag.ProcessId != task.ProcessId)
+        {
+            throw new UnauthorizedAccessException("Tag does not belong to process");
+        }
 
-        _logger.LogInformation("Removing tag: {TagId} from task: {TaskId} by user: {UserId}", tagId, taskId, userId);
+        await CheckAdminAsync(task.ProcessId);
 
-        await _taskRepo.RemoveTagAsync(task.Id, tagId);
+        _logger.LogInformation("Removing tag: {TagId} from task: {TaskId}", tagId, taskId);
+
+        await _taskRepo.RemoveTagAsync(taskId, tagId);
 
         _logger.LogInformation("Tag removed successfully: {TaskId}", taskId);
     }
@@ -215,7 +250,8 @@ public class TaskService : ITaskService
         {
             TaskId = taskId,
             UserId = userId,
-            Text = text
+            Text = text,
+            CreatedAt = DateTime.UtcNow
         };
 
         _logger.LogInformation("Adding remark to task: {TaskId} by user: {UserId}", taskId, userId);
@@ -227,12 +263,11 @@ public class TaskService : ITaskService
 
     public async Task RemoveRemarkAsync(Guid taskId, Guid remarkId)
     {
-        var userId = GetCurrentUserId();
         var task = await GetTask(taskId);
 
-        await CheckAdmin(task.ProcessId);
+        await CheckAdminAsync(task.ProcessId);
 
-        _logger.LogInformation("Removing remark: {RemarkId} from task: {TaskId} by user: {UserId}", remarkId, taskId, userId);
+        _logger.LogInformation("Removing remark: {RemarkId} from task: {TaskId}", remarkId, taskId);
 
         await _taskRepo.RemoveRemarkAsync(task.Id, remarkId);
 

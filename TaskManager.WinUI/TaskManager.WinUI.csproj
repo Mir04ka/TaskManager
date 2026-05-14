@@ -15,7 +15,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Views\LoginPage.xaml" />
-    <None Remove="Views\TaskPage.xaml" />
+    <None Remove="Views\MainPage.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -61,6 +61,9 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Page Update="Views\MainPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Views\TaskPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

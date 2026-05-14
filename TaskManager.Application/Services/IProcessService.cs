@@ -1,6 +1,6 @@
 ﻿using TaskManager.Domain.Entities;
 
-namespace TaskManager.Application.Services;
+namespace TaskManager.AppCore.Services;
 
 public interface IProcessService
 {

@@ -94,6 +94,9 @@ builder.Services.AddCors(options =>
 // Repos
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+builder.Services.AddScoped<IProcessRepository, ProcessRepository>();
+builder.Services.AddScoped<ITagRepository, TagRepository>();
+builder.Services.AddScoped<IRemarkRepository, RemarkRepository>();
 
 // Services
 builder.Services.AddHttpContextAccessor();
@@ -103,6 +106,9 @@ builder.Services.AddScoped<ICurrentUserContext>(sp => sp.GetRequiredService<Http
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IProcessService, ProcessService>();
+builder.Services.AddScoped<ITagService, TagService>();
+builder.Services.AddScoped<IRemarkService, RemarkService>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 

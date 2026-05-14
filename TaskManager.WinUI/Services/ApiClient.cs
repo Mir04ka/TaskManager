@@ -30,33 +30,17 @@ public class ApiClient : IApiClient
         _api = RestClient.For<ITasksApi>(_httpClient);
     }
 
-    public void SetToken(string token)
-        => _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
     private Task<T> WithRetryAsync<T>(Func<Task<T>> action)
         => _retryPolicy.ExecuteAsync(action);
 
     private Task WithRetryAsync(Func<Task> action)
         => _retryPolicy.ExecuteAsync(action);
-    
-    public async Task<bool> ValidateTokenAsync()
-    {
-        try
-        {
-            await WithRetryAsync(() => _api.GetTasksAsync(1, 1));
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
 
     public async Task<AuthResponse?> LoginAsync(string username, string password)
     {
         try
         {
-            var resp = await WithRetryAsync(() 
+            var resp = await WithRetryAsync(()
                 => _api.LoginAsync(new LoginRequest { Username = username, Password = password }));
             if (resp != null)
             {
@@ -75,7 +59,7 @@ public class ApiClient : IApiClient
             return null;
         }
     }
-    
+
     public async Task<AuthResponse?> RegisterAsync(string username, string password)
     {
         try
@@ -99,6 +83,22 @@ public class ApiClient : IApiClient
         }
     }
 
+    public void SetToken(string token)
+        => _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+    public async Task<bool> ValidateTokenAsync()
+    {
+        try
+        {
+            await WithRetryAsync(() => _api.GetTasksAsync(1, 1));
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async Task<PagedResult<TaskItemDto>> GetTasksAsync(int pageNumber, int pageSize)
     {
         try
@@ -108,7 +108,7 @@ public class ApiClient : IApiClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting tasks");
+            _logger.LogError(ex, "GetTasks error");
             return new PagedResult<TaskItemDto> 
             { 
                 Items = new List<TaskItemDto>(), 
@@ -119,30 +119,41 @@ public class ApiClient : IApiClient
         }
     }
 
-    public async Task<TaskItemDto?> CreateTaskAsync(string title, string description)
+    public async Task<TaskItemDto?> GetTaskByIdAsync(Guid id)
     {
         try
         {
-            var result = await WithRetryAsync(() 
-                => _api.CreateTaskAsync(new CreateTaskRequest { Title = title, Description = description }));
-            return result;
+            return await WithRetryAsync(() => _api.GetTaskByIdAsync(id));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating task");
+            _logger.LogError(ex, "GetTaskById error");
             return null;
         }
     }
 
-    public async Task UpdateTaskAsync(Guid id, string title, string description)
+    public async Task<TaskItemDto?> CreateTaskAsync(CreateTaskRequest request)
     {
         try
         {
-            await WithRetryAsync(() => _api.UpdateTaskAsync(id, new UpdateTaskRequest { Title = title, Description = description }));
+            return await WithRetryAsync(() => _api.CreateTaskAsync(request));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating task {TaskId}", id);
+            _logger.LogError(ex, "CreateTask error");
+            return null;
+        }
+    }
+
+    public async Task UpdateTaskAsync(Guid taskId, UpdateTaskRequest request)
+    {
+        try
+        {
+            await WithRetryAsync(() => _api.UpdateTaskAsync(taskId, request));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UpdateTask error {TaskId}", request.Id);
             throw;
         }
     }
@@ -155,8 +166,78 @@ public class ApiClient : IApiClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting task {TaskId}", id);
+            _logger.LogError(ex, "DeleteTask error {TaskId}", id);
             throw;
         }
+    }
+
+    public async Task AssignTaskAsync(Guid taskId, AssignTaskRequest request)
+    {
+        try
+        {
+            await WithRetryAsync(() => _api.AssignTaskAsync(taskId, request));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AssignTask error");
+            throw;
+        }
+    }
+
+    public async Task AddRemarkAsync(Guid taskId, AddRemarkRequest request)
+    {
+        try
+        {
+            await WithRetryAsync(() => _api.AddRemarkAsync(taskId, request));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AddRemark error");
+            throw;
+        }
+    }
+
+    public async Task<List<RemarkDto>> GetRemarksAsync(Guid taskId)
+    {
+        try
+        {
+            return await WithRetryAsync(() => _api.GetRemarkAsync(taskId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetRemarks error");
+            return new List<RemarkDto>();
+        }
+    }
+
+    public async Task AddTagToTaskAsync(Guid taskId, Guid tagId)
+    {
+        try
+        {
+            await WithRetryAsync(() => _api.AddTagToTaskAsync(taskId, tagId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AddTag error");
+            throw;
+        }
+    }
+
+    public async Task RemoveTagFromTaskAsync(Guid taskId, Guid tagId)
+    {
+        try
+        {
+            await WithRetryAsync(() => _api.RemoveTagFromTaskAsync(taskId, tagId));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "RemoveTag error");
+            throw;
+        }
+    }
+
+    public async Task<List<ProcessDto>> GetMyProcessAsync()
+    {
+        throw new NotImplementedException();
     }
 }
