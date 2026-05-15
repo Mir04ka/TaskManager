@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using TaskManager.AppCore.Common;
 using TaskManager.AppCore.Services;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
@@ -70,13 +71,29 @@ public class ProcessService : IProcessService
         _logger.LogInformation("User successfully added to process: {ProcessId}", processId);
     }
 
-    public async Task<List<Domain.Entities.Process>> GetCurrentUserProcessesAsync()
+    public async Task<PagedResult<Domain.Entities.Process>> GetCurrentUserProcessesAsync(int pageNumber, int pageSize)
     {
-        var userId = GetCurrentUserId();
+        pageNumber = pageNumber < 1 ? 1 : pageNumber;
+        pageSize = pageSize < 1 ? 10 : pageSize;
+        pageSize = pageSize > 100 ? 100 : pageSize;
 
-        _logger.LogInformation("Getting current user processes: {UserId}", userId);
+        if (_currentUser.CurrentUserId == null)
+        {
+            _logger.LogWarning("Attempted to get processes without logged in user");
+            return new PagedResult<Process>
+            {
+                Items = new List<Process>(),
+                TotalCount = 0,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
 
-        return await _processRepo.GetByUserIdAsync(userId);
+        var userId = _currentUser.CurrentUserId.Value;
+        _logger.LogInformation("Loading processes for user: {UserId}, page {Page}, size {Size}",
+            userId, pageNumber, pageSize);
+
+        return await _processRepo.GetByUserIdAsync(userId, pageNumber, pageSize);
     }
 
     public async Task<ProcessRole?> GetCurrentUserRoleAsync(Guid processId)

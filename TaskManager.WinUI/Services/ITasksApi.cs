@@ -49,16 +49,18 @@ public interface ITasksApi
     Task RemoveTagFromTaskAsync([Path] Guid taskId, [Path] Guid tagId);
 
     // tags
-    [Get("processes/{processId}/tags")]
+    [Get("process/{processId}/tags")]
     Task<List<TagDto>> GetTagsAsync([Path] Guid processId);
 
-    [Post("processes/{processId}tags")]
+    [Post("process/{processId}/tags")]
     Task<TagDto> CreateTagAsync([Path] Guid processId, [Body] CreateTagRequest request);
 
     [Delete("tags/{id}")]
     Task DeleteTagAsync([Path] Guid id);
 
     // process
-    [Get("process")]
-    Task<List<ProcessDto>> GetMyProcessesAsync();
+    [Get("process/my")]
+    Task<PagedResult<ProcessDto>> GetMyProcessesAsync([Query] int pageNumber, [Query] int pageSize);
+    [Post("process")]
+    Task<ProcessDto> CreateProcessAsync([Body] CreateProcessRequest request);
 }

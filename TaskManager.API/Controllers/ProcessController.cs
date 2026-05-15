@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManager.API.DTOs;
+using TaskManager.AppCore.Common;
 using TaskManager.AppCore.Services;
 using TaskManager.Domain.Entities;
 
@@ -20,25 +21,14 @@ public class ProcessController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<List<ProcessDto>>> GetMyProcesses()
+    [HttpGet("my")]
+    public async Task<ActionResult<List<ProcessDto>>> GetMyProcesses([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
     {
-        var processes = await _processService.GetCurrentUserProcessesAsync();
+        _logger.LogInformation("GetMyProcesses – page {Page}, size {Size}", pageNumber, pageSize);
 
-        var result = new List<ProcessDto>();
+        var result = await _processService.GetCurrentUserProcessesAsync(pageNumber, pageSize);
 
-        foreach (var p in processes)
-        {
-            var role = await _processService.GetCurrentUserRoleAsync(p.Id);
-            result.Add(new ProcessDto 
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Role = role?.ToString() ?? "Member"
-            });
-        }
-
-        return Ok(result);
+        return Ok(MapPagedResult(result));
     }
 
     [HttpPost]
@@ -79,4 +69,21 @@ public class ProcessController : ControllerBase
 
         return Ok(role.ToString());
     }
+
+    private static PagedResult<ProcessDto> MapPagedResult(PagedResult<Process> src)
+        => new()
+        {
+            Items = src.Items.Select(MapToDto).ToList(),
+            TotalCount = src.TotalCount,
+            PageNumber = src.PageNumber,
+            PageSize = src.PageSize
+        };
+
+    private static ProcessDto MapToDto(Process p)
+        => new()
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Role = "Member"
+        };
 }

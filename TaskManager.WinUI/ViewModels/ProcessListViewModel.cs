@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using TaskManager.WinUI.Models;
 using TaskManager.WinUI.Services;
 using TaskManager.WinUI.Services.State;
 using TaskManager.WinUI.ViewModels;
@@ -48,12 +49,59 @@ public sealed partial class ProcessListViewModel : BaseViewModel
 
     public async Task LoadAsync()
     {
-        throw new NotImplementedException();
+        try
+        {
+            var result = await _apiClient.GetMyProcessesAsync(PageNumber, PageSize);
+            Processes.Clear();
+
+            foreach (var item in result.Items)
+            {
+                Processes.Add(new ProcessItemVm(this, _apiClient)
+                {
+                    Id = item.Id,
+                    Name = item.Name,
+                });
+            }
+
+            TotalCount = result.TotalCount;
+
+            _logger.LogInformation("Loaded processes page {Page} with {Count} processes", PageNumber, Processes.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading processes");
+        }
     }
 
     partial void OnSelectedProcessChanged(ProcessItemVm? value)
     {
         _state.SelectedProcess = value;
+    }
+
+    [RelayCommand]
+    private async Task AddProcess()
+    {
+        try
+        {
+            var newProcess = await _apiClient.CreateProcessAsync(new CreateProcessRequest
+            {
+                Name = "New process"
+            });
+
+            if (newProcess != null)
+            {
+                Processes.Add(new ProcessItemVm(this, _apiClient)
+                {
+                    Id = newProcess.Id,
+                    Name = newProcess.Name,
+
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding process");
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanGoNext))]

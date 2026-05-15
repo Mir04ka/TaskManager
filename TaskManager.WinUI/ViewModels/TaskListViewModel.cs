@@ -56,12 +56,14 @@ public sealed partial class TaskListViewModel : BaseViewModel
     {
         if (e.PropertyName == nameof(WorkspaceState.SelectedProcess))
         {
-            await LoadAsync(_state.SelectedProcess?.Id);
+            await LoadAsync();
         }
     }
 
-    public async Task LoadAsync(Guid? processId)
+    public async Task LoadAsync()
     {
+        Guid? processId = _state.SelectedProcess?.Id;
+
         if (processId == null)
         {
             _logger.LogInformation("No process selected");
@@ -99,7 +101,7 @@ public sealed partial class TaskListViewModel : BaseViewModel
         if (PageNumber < TotalPages)
         {
             PageNumber++;
-            await LoadAsync(_state.SelectedProcess.Id);
+            await LoadAsync();
         }
     }
     private bool CanGoNext() => PageNumber < TotalPages;
@@ -110,7 +112,7 @@ public sealed partial class TaskListViewModel : BaseViewModel
         if (PageNumber > 1)
         {
             PageNumber--;
-            await LoadAsync(_state.SelectedProcess.Id);
+            await LoadAsync();
         }
     }
     private bool CanGoPrev() => PageNumber > 1;

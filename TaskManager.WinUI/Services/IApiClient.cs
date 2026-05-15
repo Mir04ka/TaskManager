@@ -25,5 +25,6 @@ public interface IApiClient
     Task AddTagToTaskAsync(Guid taskId, Guid tagId);
     Task RemoveTagFromTaskAsync(Guid taskId, Guid tagId);
 
-    Task<List<ProcessDto>> GetMyProcessAsync();
+    Task<PagedResult<ProcessDto>> GetMyProcessesAsync(int pageNumber, int pageSize);
+    Task<ProcessDto?> CreateProcessAsync(CreateProcessRequest request);
 }

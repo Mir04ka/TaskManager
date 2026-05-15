@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TaskManager.AppCore.Common;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Interfaces;
 using TaskManager.Infrastructure.Data;
@@ -19,12 +20,27 @@ public class ProcessRepository : IProcessRepository
         return await _db.Processes.Include(p => p.Users).FirstOrDefaultAsync(p => p.Id == id);
     }
 
-    public async Task<List<Process>> GetByUserIdAsync(Guid userId)
+    public async Task<PagedResult<Process>> GetByUserIdAsync(Guid userId, int pageNumber, int pageSize)
     {
-        return await _db.Processes
+        var query = _db.Processes
             .Where(p => p.Users.Any(u => u.UserId == userId))
-            .AsNoTracking()
+            .AsNoTracking();
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderBy(t => t.Name)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+        return new PagedResult<Process>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
     }
 
     public async Task AddAsync(Process process)

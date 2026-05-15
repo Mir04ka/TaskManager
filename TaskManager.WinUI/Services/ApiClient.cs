@@ -236,8 +236,29 @@ public class ApiClient : IApiClient
         }
     }
 
-    public async Task<List<ProcessDto>> GetMyProcessAsync()
+    public async Task<PagedResult<ProcessDto>> GetMyProcessesAsync(int pageNumber, int pageSize)
     {
-        throw new NotImplementedException();
+        try
+        {
+            return await WithRetryAsync(() => _api.GetMyProcessesAsync(pageNumber, pageSize));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetMyProcesses error");
+            throw;
+        }
+    }
+
+    public async Task<ProcessDto?> CreateProcessAsync(CreateProcessRequest request)
+    {
+        try
+        {
+            return await WithRetryAsync(() => _api.CreateProcessAsync(request));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "CreateProcess error");
+            return null;
+        }
     }
 }

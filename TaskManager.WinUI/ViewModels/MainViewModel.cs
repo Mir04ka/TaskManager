@@ -43,7 +43,7 @@ public partial class MainViewModel : BaseViewModel
         try
         {
             await Processes.LoadAsync();
-            await Tasks.LoadAsync(Guid.Empty);
+            await Tasks.LoadAsync();
         }
         catch (Exception ex)
         {
