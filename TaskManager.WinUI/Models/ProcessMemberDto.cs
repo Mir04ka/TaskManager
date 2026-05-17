@@ -1,11 +1,10 @@
 ﻿using System;
-
 namespace TaskManager.WinUI.Models;
 
-public class ProcessDto
+public class ProcessMemberDto
 {
-    public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
+    public Guid UserId { get; set; }
+    public string Username { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public bool IsAdmin => Role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 }

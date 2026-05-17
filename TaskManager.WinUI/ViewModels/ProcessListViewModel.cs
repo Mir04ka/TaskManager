@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
+using System.Data;
 using System.Threading.Tasks;
 using TaskManager.WinUI.Models;
 using TaskManager.WinUI.Services;
@@ -31,7 +32,6 @@ public sealed partial class ProcessListViewModel : BaseViewModel
 
     [ObservableProperty]
     private ProcessItemVm? _selectedProcess;
-    public event Action<ProcessItemVm?>? SelectedProcessChanged;
 
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 
@@ -60,6 +60,7 @@ public sealed partial class ProcessListViewModel : BaseViewModel
                 {
                     Id = item.Id,
                     Name = item.Name,
+                    Role = item.Role,
                 });
             }
 
@@ -75,7 +76,27 @@ public sealed partial class ProcessListViewModel : BaseViewModel
 
     partial void OnSelectedProcessChanged(ProcessItemVm? value)
     {
-        _state.SelectedProcess = value;
+        if (value != null)
+        {
+            _state.SelectedProcess = new ProcessDto
+            {
+                Id = value.Id,
+                Name = value.Name,
+                Role = value.Role
+            };
+            _state.CurrentUserRole = value.Role;
+            _state.SelectedProcess = new ProcessDto
+            {
+                Id = value.Id,
+                Name = value.Name,
+                Role = value.Role
+            };
+        }
+        else
+        {
+            _state.SelectedProcess = null;
+            _state.CurrentUserRole = string.Empty;
+        }
     }
 
     [RelayCommand]
@@ -94,7 +115,7 @@ public sealed partial class ProcessListViewModel : BaseViewModel
                 {
                     Id = newProcess.Id,
                     Name = newProcess.Name,
-
+                    Role = newProcess.Role
                 });
             }
         }
@@ -132,9 +153,6 @@ public sealed partial class ProcessItemVm : ObservableObject
     private readonly ProcessListViewModel _parent;
     private readonly IApiClient _apiClient;
 
-    private string _originalTitle = string.Empty;
-    private string _originalDescription = string.Empty;
-
     public Guid Id { get; set; }
 
     private string _name = string.Empty;
@@ -145,7 +163,10 @@ public sealed partial class ProcessItemVm : ObservableObject
     }
 
     [ObservableProperty]
-    private bool _isAdmin;
+    [NotifyPropertyChangedFor(nameof(IsAdmin))]
+    private string _role = string.Empty;
+
+    public bool IsAdmin => Role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 
     public ProcessItemVm(ProcessListViewModel parent, IApiClient apiClient)
     {

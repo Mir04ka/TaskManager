@@ -14,11 +14,13 @@ public class ProcessController : ControllerBase
 {
     private readonly IProcessService _processService;
     private readonly ILogger<ProcessController> _logger;
+    private readonly ICurrentUserContext _currentUser;
 
-    public ProcessController(IProcessService processService, ILogger<ProcessController> logger)
+    public ProcessController(IProcessService processService, ILogger<ProcessController> logger, ICurrentUserContext currentUser)
     {
         _processService = processService;
         _logger = logger;
+        _currentUser = currentUser;
     }
 
     [HttpGet("my")]
@@ -27,8 +29,36 @@ public class ProcessController : ControllerBase
         _logger.LogInformation("GetMyProcesses – page {Page}, size {Size}", pageNumber, pageSize);
 
         var result = await _processService.GetCurrentUserProcessesAsync(pageNumber, pageSize);
+        var userId = _currentUser.CurrentUserId ?? Guid.Empty;
 
-        return Ok(MapPagedResult(result));
+        var dtos = new List<ProcessDto>();
+        foreach (var p in result.Items)
+        {
+            var userEntry = p.Users.FirstOrDefault(u => u.UserId == userId);
+
+            string role;
+            if (userEntry != null)
+            {
+                role = userEntry.Role.ToString();
+            }
+            else
+            {
+                _logger.LogWarning("Users empty for process {ProcessId}, querying role directly", p.Id);
+                var directRole = await _processService.GetCurrentUserRoleAsync(p.Id);
+                role = directRole?.ToString() ?? "Member";
+            }
+
+            _logger.LogInformation("Process {ProcessId} role={Role} usersCount={Count}", p.Id, role, p.Users.Count);
+            dtos.Add(new ProcessDto { Id = p.Id, Name = p.Name, Role = role });
+        }
+
+        return Ok(new PagedResult<ProcessDto>
+        {
+            Items = dtos,
+            TotalCount = result.TotalCount,
+            PageNumber = result.PageNumber,
+            PageSize = result.PageSize
+        });
     }
 
     [HttpPost]
@@ -70,6 +100,19 @@ public class ProcessController : ControllerBase
         return Ok(role.ToString());
     }
 
+    [HttpGet("{processId}/members")]
+    public async Task<ActionResult<List<ProcessMemberDto>>> GetMembers(Guid processId)
+    {
+        _logger.LogInformation("GetMembers for process: {ProcessId}", processId);
+        var members = await _processService.GetMembersAsync(processId);
+        return Ok(members.Select(m => new ProcessMemberDto
+        {
+            UserId = m.UserId,
+            Username = m.User?.Username ?? string.Empty,
+            Role = m.Role.ToString()
+        }));
+    }
+
     private static PagedResult<ProcessDto> MapPagedResult(PagedResult<Process> src)
         => new()
         {
@@ -84,6 +127,6 @@ public class ProcessController : ControllerBase
         {
             Id = p.Id,
             Name = p.Name,
-            Role = "Member"
+            Role = "Admin"
         };
 }

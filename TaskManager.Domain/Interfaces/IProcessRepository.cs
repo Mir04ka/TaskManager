@@ -10,4 +10,5 @@ public interface IProcessRepository
     Task AddAsync(Process process);
     Task AddUserAsync(Guid processId, Guid userId, ProcessRole role);
     Task<ProcessUser?> GetUserRoleAsync(Guid processId, Guid userId);
+    Task<List<ProcessUser>> GetMembersAsync(Guid processId);
 }

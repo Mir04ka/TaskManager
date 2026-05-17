@@ -1,8 +1,10 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Threading.Tasks;
 using TaskManager.WinUI.Localization;
 using TaskManager.WinUI.Services;
 using TaskManager.WinUI.Services.State;
+using TaskManager.WinUI.Views;
 
 namespace TaskManager.WinUI.ViewModels;
 
@@ -34,8 +36,6 @@ public partial class MainViewModel : BaseViewModel
 
         Loc = localization;
         State = state;
-
-        //Processes.SelectedProcessChanged += OnProcessChanged;
     }
 
     public async Task LoadAsync()
@@ -49,28 +49,12 @@ public partial class MainViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine(ex);
         }
-        //try
-        //{
-        //    var result = await _apiClient.GetTasksAsync(PageNumber, PageSize);
-        //    Tasks.Clear();
+    }
 
-        //    foreach (var item in result.Items)
-        //    {
-        //        Tasks.Add(new TaskItemVm(this, _apiClient)
-        //        {
-        //            Id = item.Id,
-        //            Title = item.Title,
-        //            Description = item.Description,
-        //        });
-        //    }
-
-        //    TotalCount = result.TotalCount;
-
-        //    _logger.LogInformation("Loaded page {Page} with {Count} tasks", PageNumber, Tasks.Count);
-        //}
-        //catch (Exception ex)
-        //{
-        //    _logger.LogError(ex, "Error loading tasks");
-        //}
+    [RelayCommand]
+    private void Logout()
+    {
+        _authService.Logout();
+        _navigationService.NavigateAndClearBackStack<LoginPage>();
     }
 }

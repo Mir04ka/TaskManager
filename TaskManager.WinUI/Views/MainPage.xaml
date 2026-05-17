@@ -6,204 +6,458 @@
     xmlns:local="using:TaskManager.WinUI.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Page.Resources>
+        <local:BoolToVisibilityConverter        x:Key="BoolToVisConverter"/>
+        <local:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisConverter"/>
+        <local:NullToCollapsedConverter         x:Key="NullToCollapsed"/>
+        <local:NullToVisibleConverter           x:Key="NullToVisible"/>
+        <local:StatusToBrushConverter           x:Key="StatusToBrush"/>
+        <local:DeadlineColorConverter           x:Key="DeadlineColor"/>
+        <local:DateTimeToStringConverter        x:Key="DateTimeToStr"/>
+        <local:DateOnlyConverter                x:Key="DateOnly"/>
+        <local:BoolToAdminLabelConverter        x:Key="AdminLabel"/>
+        <local:EmptyStringToCollapsedConverter  x:Key="EmptyStringToCollapsed"/>
+        <local:InverseBoolConverter             x:Key="InverseBool"/>
+    </Page.Resources>
 
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="260"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <!-- Processes -->
-        <Border Grid.Column="0"
-                BorderBrush="LightGray"
-                BorderThickness="0,0,1,0">  
+        <!-- ── Top Bar ── -->
+        <Grid Grid.Row="0" Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}" Padding="12,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-            <Grid>
+            <TextBlock Grid.Column="0" Text="📋 Task Manager"
+               FontWeight="SemiBold" FontSize="18"
+               VerticalAlignment="Center"/>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBlock Text="🌐" FontSize="14" VerticalAlignment="Center"/>
+                <ComboBox ItemsSource="{Binding Loc.AvailableLanguages}"
+                          SelectedItem="{Binding Loc.SelectedLanguage, Mode=TwoWay}"
+                          Width="100" Height="32"/>
+                <Button Content="{Binding Loc[Logout]}"
+                        Command="{Binding LogoutCommand}"
+                        Height="32" Padding="12,0"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="240" MinWidth="200" MaxWidth="320"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*" MinWidth="300"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="340" MinWidth="280" MaxWidth="420"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ── Left: Processes ── -->
+            <Grid Grid.Column="0" Background="{ThemeResource SystemControlBackgroundAltHighBrush}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Header -->
-                <StackPanel Grid.Row="0">
-                    <Button Content="{Binding Loc[AddProcess]}"
+                <StackPanel Grid.Row="0" Padding="12,10,12,6" Spacing="8">
+                    <TextBlock Text="Мои процессы" FontWeight="SemiBold" FontSize="13" Opacity="0.6"/>
+                    <Button Content="+ Новый процесс"
                             Command="{Binding Processes.AddProcessCommand}"
-                            Margin="8"/>
+                            HorizontalAlignment="Stretch" Height="36"/>
                 </StackPanel>
 
-                <!-- List -->
                 <ListView Grid.Row="1"
                           ItemsSource="{Binding Processes.Processes}"
-                          SelectedItem="{Binding Processes.SelectedProcess, Mode=TwoWay}">
-
+                          SelectedItem="{Binding Processes.SelectedProcess, Mode=TwoWay}"
+                          SelectionMode="Single">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Name}" Margin="12"/>
+                            <Grid Padding="4,6" ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding Name}"
+                               TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                <Border Grid.Column="1" CornerRadius="10"
+                                        Background="{ThemeResource SystemAccentColor}"
+                                        Padding="6,2" Opacity="0.8">
+                                    <TextBlock Text="{Binding IsAdmin, Converter={StaticResource AdminLabel}}"
+                                               FontSize="10" VerticalAlignment="Center"/>
+                                </Border>
+                            </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
 
-                <!-- Pagination -->
-                <StackPanel Grid.Row="2"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Center"
-                            Spacing="8"
-                            Margin="8">
-
-                    <Button Content="◀" Command="{Binding Processes.PrevPageCommand}"/>
-
-                    <TextBlock VerticalAlignment="Center">
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8" Margin="8">
+                    <Button Content="◀" Command="{Binding Processes.PrevPageCommand}" Width="36" Height="32"/>
+                    <TextBlock VerticalAlignment="Center" FontSize="12">
                         <Run Text="{Binding Processes.PageNumber}"/>
                         <Run Text=" / "/>
                         <Run Text="{Binding Processes.TotalPages}"/>
                     </TextBlock>
-
-                    <Button Content="▶" Command="{Binding Processes.NextPageCommand}"/>
-                </StackPanel>
-
-            </Grid>
-        </Border>
-
-        <!-- Tasks -->
-        <Grid Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <!-- Header -->
-            <Grid Grid.Row="0" Margin="8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <Button Grid.Column="0"
-                        Content="{Binding Loc[AddTask]}"
-                        Command="{Binding Tasks.AddTaskCommand}"
-                        MinHeight="40"/>
-
-                <StackPanel Grid.Column="2"
-                            Orientation="Horizontal"
-                            Spacing="8"
-                            VerticalAlignment="Center">     
-                    <TextBlock Text="🌐" FontSize="16" VerticalAlignment="Center"/>
-                    <ComboBox ItemsSource="{Binding Loc.AvailableLanguages}"
-                            SelectedItem="{Binding Loc.SelectedLanguage, Mode=TwoWay}"
-                            Width="120"
-                            Height="36"/>
-                    <Button Content="{Binding Loc[Logout]}"
-                            Command="{Binding LogoutCommand}"
-                            MinHeight="40"/>        
+                    <Button Content="▶" Command="{Binding Processes.NextPageCommand}" Width="36" Height="32"/>
                 </StackPanel>
             </Grid>
 
-            <!-- Tasks -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{Binding Tasks.Tasks}" Margin="8">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border BorderBrush="LightGray"
-                                    BorderThickness="1"
-                                    CornerRadius="4"
-                                    Padding="12"
-                                    Margin="0,0,0,8">
-                                <StackPanel>
-                                    <Grid Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisConverter}}">
+            <Border Grid.Column="1" Width="1" Background="{ThemeResource SystemControlForegroundBaseLowBrush}"/>
+
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Empty state -->
+                <StackPanel Grid.Row="0" Grid.RowSpan="4"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Visibility="{Binding Processes.SelectedProcess, Converter={StaticResource NullToVisible}}"
+                            Spacing="12" Opacity="0.5">
+                    <FontIcon Glyph="&#xE7F4;" FontSize="48"/>
+                    <TextBlock Text="Выберите процесс" FontSize="16" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Toolbar -->
+                <Grid Grid.Row="0" Padding="12,10,12,6"
+                      Visibility="{Binding Processes.SelectedProcess, Converter={StaticResource NullToCollapsed}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0"
+                            Content="+ Задача"
+                            Command="{Binding Tasks.AddTaskCommand}"
+                            Visibility="{Binding Tasks.IsAdmin, Converter={StaticResource BoolToVisConverter}}"
+                            Height="36" Padding="12,0"/>
+
+                    <TextBox Grid.Column="1"
+                             PlaceholderText="🔍  Поиск задач..."
+                             Text="{Binding Tasks.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="8,0" Height="36"/>
+
+                    <ComboBox Grid.Column="2"
+                              ItemsSource="{Binding Tasks.StatusFilters}"
+                              SelectedItem="{Binding Tasks.SelectedStatusFilter, Mode=TwoWay}"
+                              Width="120" Height="36"/>
+                </Grid>
+
+                <!-- Loading -->
+                <ProgressBar Grid.Row="1"
+                             IsIndeterminate="True"
+                             Visibility="{Binding Tasks.IsLoading, Converter={StaticResource BoolToVisConverter}}"
+                             Margin="0,0,0,4"/>
+
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+                              Visibility="{Binding Processes.SelectedProcess, Converter={StaticResource NullToCollapsed}}">
+                    <ListView ItemsSource="{Binding Tasks.Tasks}" Margin="8,4"
+                              SelectedItem="{Binding Tasks.SelectedTask, Mode=TwoWay}"
+                              SelectionMode="Single"
+                              IsItemClickEnabled="True">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                                        BorderThickness="1" CornerRadius="8"
+                                        Padding="12,10" Margin="0,0,0,6"
+                                        Background="{ThemeResource SystemControlBackgroundAltHighBrush}">
+
+                                    <Grid ColumnSpacing="8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <StackPanel Grid.Column="0">
+                                        <!-- Task info -->
+                                        <StackPanel Grid.Column="0" Spacing="4">
                                             <TextBlock Text="{Binding Title}"
-                                                       FontWeight="Bold"
-                                                       FontSize="15"
-                                                       TextWrapping="Wrap"
-                                                       MaxLines="2"/>   
+                                                       FontWeight="SemiBold" FontSize="14"
+                                                       TextWrapping="Wrap" MaxLines="2"/>
                                             <TextBlock Text="{Binding Description}"
-                                                       TextWrapping="Wrap"
-                                                       MaxLines="3"
-                                                       Margin="0,4,0,0"
-                                                       Opacity="0.7"/>
-                                        </StackPanel>
+                                                       TextWrapping="Wrap" MaxLines="2"
+                                                       FontSize="12" Opacity="0.65"/>
 
-                                        <StackPanel Grid.Column="1"
-                                                    Orientation="Vertical"
-                                                    Spacing="4"
-                                                    VerticalAlignment="Top"
-                                                    Margin="12,0,0,0">
+                                            <ItemsControl ItemsSource="{Binding Tags}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal" Spacing="4"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="{ThemeResource SystemAccentColor}"
+                                                                CornerRadius="10" Padding="6,2">
+                                                            <TextBlock Text="{Binding Name}" FontSize="10" Foreground="White"/>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
 
-                                            <Button Content="{Binding Loc[Edit]}"
-                                                    Command="{Binding EditCommand}"
-                                                    HorizontalAlignment="Stretch"
-                                                    MinWidth="90" MinHeight="36"/>
+                                            <!-- Meta row -->
+                                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                                <Border Background="{Binding Status, Converter={StaticResource StatusToBrush}}"
+                                                        CornerRadius="10" Padding="6,2">
+                                                    <TextBlock Text="{Binding StatusDisplay}" FontSize="11" Foreground="White"/>
+                                                </Border>
+                                                <StackPanel Orientation="Horizontal" Spacing="4"
+                                                            Visibility="{Binding Deadline, Converter={StaticResource NullToCollapsed}}">
+                                                    <TextBlock Text="📅" FontSize="11"/>
+                                                    <TextBlock Text="{Binding Deadline, Converter={StaticResource DateOnly}}"
+                                                               FontSize="11"
+                                                               Foreground="{Binding Deadline, Converter={StaticResource DeadlineColor}}"/>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Spacing="4"
+                                                            Visibility="{Binding AssignedToUsername, Converter={StaticResource EmptyStringToCollapsed}}">
+                                                    <TextBlock Text="👤" FontSize="11"/>
+                                                    <TextBlock Text="{Binding AssignedToUsername}" FontSize="11" Opacity="0.7"/>
+                                                </StackPanel>
+                                            </StackPanel>
 
-                                            <Button Content="{Binding Loc[Delete]}"
-                                                    Command="{Binding DeleteCommand}"
-                                                    HorizontalAlignment="Stretch"
-                                                    MinWidth="90" MinHeight="36"/>
+                                            <!-- Quick actions -->
+                                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Top">
+                                                <Button Content="✏️"
+                                                        Command="{Binding BeginEditCommand}"
+                                                        Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisConverter}}"
+                                                        Width="36" Height="32" Padding="0" ToolTipService.ToolTip="Редактировать"/>
+                                                <Button Content="🗑️"
+                                                        Command="{Binding DeleteCommand}"
+                                                        Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisConverter}}"
+                                                        Width="36" Height="32" Padding="0" ToolTipService.ToolTip="Удалить"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </ScrollViewer>
 
-                                    <!-- Editing -->
-                                    <StackPanel Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisConverter}}" Spacing="4">
-                                        <TextBlock Text="Title"/>
-                                        <TextBox Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 MaxLength="200"
-                                                 TextWrapping="Wrap"/>
-                                        <TextBlock>
-                                            <Run Text="{Binding Title.Length, Mode=OneWay}"/>
-                                            <Run Text=" / 200"/>
-                                        </TextBlock>
+                <!-- Pagination -->
+                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8" Margin="8"
+                            Visibility="{Binding Processes.SelectedProcess, Converter={StaticResource NullToCollapsed}}">
+                    <Button Content="◀" Command="{Binding Tasks.PrevPageCommand}" Width="36" Height="32"/>
+                    <TextBlock VerticalAlignment="Center" FontSize="12">
+                        <Run Text="{Binding Tasks.PageNumber, Mode=OneWay}"/>
+                        <Run Text=" / "/>
+                        <Run Text="{Binding Tasks.TotalPages, Mode=OneWay}"/>   
+                    </TextBlock>
+                    <Button Content="▶" Command="{Binding Tasks.NextPageCommand}" Width="36" Height="32"/>
+                </StackPanel>
+            </Grid>
 
-                                        <TextBlock Text="Description" Margin="0,8,0,0"/>
-                                        <TextBox Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 MaxLength="1000"
-                                                 TextWrapping="Wrap"
-                                                 AcceptsReturn="True"
-                                                 Height="80"
-                                                 ScrollViewer.VerticalScrollBarVisibility="Auto"/>
-                                        <TextBlock>
-                                            <Run Text="{Binding Description.Length, Mode=OneWay}"/>
-                                            <Run Text=" / 1000"/>
-                                        </TextBlock>
+            <Border Grid.Column="3" Width="1" Background="{ThemeResource SystemControlForegroundBaseLowBrush}"/>
 
-                                        <StackPanel Orientation="Horizontal"
-                                                    Spacing="8"
-                                                    Margin="0,8,0,0">
-                                            <Button Content="{Binding Loc[Save]}"
-                                                    Command="{Binding SaveCommand}"
-                                                    MinWidth="90" MinHeight="36"/>
-                                            <Button Content="{Binding Loc[Cancel]}"
-                                                    Command="{Binding CancelCommand}"
-                                                    MinWidth="90" MinHeight="36"/>
+            <!-- ── Right: Task Detail Panel ── -->
+            <ScrollViewer Grid.Column="4" VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding Tasks.SelectedTask, Converter={StaticResource NullToCollapsed}}">
+                <StackPanel Padding="16,12" Spacing="16" DataContext="{Binding Tasks.SelectedTask}">
+
+                    <!-- Title -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Название" FontSize="11" Opacity="0.5"/>
+                        <TextBox Text="{Binding Title, Mode=TwoWay}"
+                                 IsReadOnly="{Binding IsAdmin, Converter={StaticResource InverseBool}}"
+                                 FontSize="16" FontWeight="SemiBold"
+                                 TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <!-- Description -->
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Описание" FontSize="11" Opacity="0.5"/>
+                        <TextBox Text="{Binding Description, Mode=TwoWay}"
+                                 IsReadOnly="{Binding IsAdmin, Converter={StaticResource InverseBool}}"
+                                 TextWrapping="Wrap" AcceptsReturn="True" MinHeight="72"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                    </StackPanel>
+
+                    <!-- Status + Deadline row -->
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Status -->
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="Статус" FontSize="11" Opacity="0.5"/>
+                            <ComboBox SelectedItem="{Binding Status, Mode=TwoWay}"
+                                      HorizontalAlignment="Stretch" Height="36">
+                                <x:String>Todo</x:String>
+                                <x:String>InProgress</x:String>
+                                <x:String>Done</x:String>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <!-- Deadline -->
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock Text="Дедлайн" FontSize="11" Opacity="0.5"/>
+                            <CalendarDatePicker Date="{Binding Deadline, Mode=TwoWay}"
+                                                HorizontalAlignment="Stretch" Height="36"
+                                                PlaceholderText="Не указан"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Assignee (admin only) -->
+                    <StackPanel Spacing="4"
+                                Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisConverter}}">
+                        <TextBlock Text="Исполнитель" FontSize="11" Opacity="0.5"/>
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0"
+                                      ItemsSource="{Binding ProcessMembers}"
+                                      SelectedValue="{Binding SelectedAssignee, Mode=TwoWay}"
+                                      DisplayMemberPath="Username"
+                                      HorizontalAlignment="Stretch" Height="36"/>
+                            <Button Grid.Column="1" Content="Назначить"
+                                    Command="{Binding AssignToCommand}"
+                                    CommandParameter="{Binding SelectedAssignee}"
+                                    Height="36" Padding="10,0"/>
+                        </Grid>
+                        <TextBlock Opacity="0.6" FontSize="12">
+                            <Run Text="Текущий: "/>
+                            <Run Text="{Binding AssignedToUsername}"/>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Save / Cancel editing -->
+                    <StackPanel Orientation="Horizontal" Spacing="8"
+                                Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisConverter}}">
+                        <Button Content="💾 Сохранить"
+                                Command="{Binding SaveCommand}"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Height="36" Padding="14,0"/>
+                        <Button Content="✖ Отмена"
+                                Command="{Binding CancelEditCommand}"
+                                Height="36" Padding="14,0"/>
+                    </StackPanel>
+
+                    <!-- Separator -->
+                    <Border Height="1" Background="{ThemeResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <!-- Tags section -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Теги" FontWeight="SemiBold" FontSize="14"/>
+
+                        <!-- Current tags -->
+                        <ItemsControl ItemsSource="{Binding Tags}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="6"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{ThemeResource SystemAccentColor}"
+                                            CornerRadius="12" Padding="8,4" Margin="0,0,4,4">
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <TextBlock Text="{Binding Name}" FontSize="12" Foreground="White" VerticalAlignment="Center"/>
+                                            <Button Content="✕" Width="18" Height="18" Padding="0" FontSize="9"
+                                                    Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource Mode=Self}}"
+                                                    CommandParameter="{Binding}"
+                                                    Visibility="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource Mode=Self}, Converter={StaticResource BoolToVisConverter}}"/>
                                         </StackPanel>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Add tag (admin) -->
+                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                    Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisConverter}}">
+                            <ComboBox ItemsSource="{Binding AvailableTags}"
+                                      DisplayMemberPath="Name"
+                                      PlaceholderText="Выберите тег..."
+                                      Width="180" Height="34"
+                                      x:Name="TagSelector"/>
+                            <Button Content="+ Добавить"
+                                    Command="{Binding AddTagCommand}"
+                                    CommandParameter="{Binding SelectedItem, ElementName=TagSelector}"
+                                    Height="34" Padding="10,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Separator -->
+                    <Border Height="1" Background="{ThemeResource SystemControlForegroundBaseLowBrush}"/>
+
+                    <!-- Remarks section -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Заметки / Ремарки" FontWeight="SemiBold" FontSize="14"/>
+
+                        <ItemsControl ItemsSource="{Binding Remarks}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                                            CornerRadius="6" Padding="10,8" Margin="0,0,0,6">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid Grid.Row="0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="{Binding Username}" FontWeight="SemiBold" FontSize="12"/>
+                                                    <TextBlock Text="{Binding CreatedAt, Converter={StaticResource DateTimeToStr}}"
+                                                   FontSize="11" Opacity="0.5" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <Button Grid.Column="1" Content="🗑️" Width="28" Height="28"
+                                                        Padding="0" FontSize="11"
+                                                        Command="{Binding DataContext.DeleteRemarkCommand, RelativeSource={RelativeSource Mode=Self}}"
+                                                        CommandParameter="{Binding}"
+                                                        Visibility="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource Mode=Self}, Converter={StaticResource BoolToVisConverter}}"/>
+                                            </Grid>
+                                            <TextBlock Grid.Row="1" Text="{Binding Text}"
+                                                       TextWrapping="Wrap" FontSize="13" Margin="0,4,0,0"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Add remark -->
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding NewRemarkText, Mode=TwoWay}"
+                                     PlaceholderText="Добавить заметку..."
+                                     TextWrapping="Wrap" AcceptsReturn="True"
+                                     MinHeight="56" MaxHeight="120"/>
+                            <Button Grid.Column="1" Content="📝 Добавить"
+                                    Command="{Binding AddRemarkCommand}"
+                                    VerticalAlignment="Top" Height="36" Padding="10,0"/>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
             </ScrollViewer>
 
-            <!-- Pagination -->
-            <StackPanel Grid.Row="2"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Center"
-                        Spacing="8"
-                        Margin="8">
-                <Button Content="◀" Command="{Binding Tasks.PrevPageCommand}"/>
-                <TextBlock VerticalAlignment="Center">
-                    <Run Text="{Binding Tasks.PageNumber, Mode=OneWay}"/>
-                    <Run Text=" / "/>
-                    <Run Text="{Binding Tasks.TotalPages, Mode=OneWay}"/>
-                </TextBlock>
-                <Button Content="▶" Command="{Binding Tasks.NextPageCommand}"/>
+            <!-- Right panel empty state -->
+            <StackPanel Grid.Column="4"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Visibility="{Binding Tasks.SelectedTask, Converter={StaticResource NullToVisible}}"
+                        Spacing="12" Opacity="0.4">
+                <FontIcon Glyph="&#xE8A5;" FontSize="40"/>
+                <TextBlock Text="Выберите задачу" HorizontalAlignment="Center"/>
             </StackPanel>
         </Grid>
     </Grid>

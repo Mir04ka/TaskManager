@@ -96,6 +96,12 @@ public class ProcessService : IProcessService
         return await _processRepo.GetByUserIdAsync(userId, pageNumber, pageSize);
     }
 
+    public async Task<List<ProcessUser>> GetMembersAsync(Guid processId)
+    {
+        _logger.LogInformation("Getting members for process: {ProcessId}", processId);
+        return await _processRepo.GetMembersAsync(processId);
+    }
+
     public async Task<ProcessRole?> GetCurrentUserRoleAsync(Guid processId)
     {
         var userId = GetCurrentUserId();
@@ -106,4 +112,6 @@ public class ProcessService : IProcessService
 
         return role?.Role;
     }
+
+
 }

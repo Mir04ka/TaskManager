@@ -18,7 +18,16 @@ public interface ITasksApi
 
     // tasks
     [Get("tasks/my")]
-    Task<PagedResult<TaskItemDto>> GetTasksAsync([Query] int pageNumber, [Query] int pageSize);
+    Task<PagedResult<TaskItemDto>> GetMyTasksAsync([Query] int pageNumber, [Query] int pageSize);
+
+    [Get("tasks/my")]
+    Task<PagedResult<TaskItemDto>> GetTasksAsync([Query] int pageNumber, [Query] int pageSize); // ValidateTokenAsync
+
+    [Get("tasks/process/{processId}")]
+    Task<PagedResult<TaskItemDto>> GetProcessTasksAsync(
+        [Path] Guid processId,
+        [Query] int pageNumber, 
+        [Query] int pageSize);
 
     [Get("tasks/{id}")]
     Task<TaskItemDto> GetTaskByIdAsync([Path] Guid id);
@@ -32,35 +41,49 @@ public interface ITasksApi
     [Delete("tasks/{id}")]
     Task DeleteTaskAsync([Path] Guid id);
 
-    // task ops
     [Post("tasks/{id}/assign")]
     Task AssignTaskAsync([Path] Guid id, [Body] AssignTaskRequest request);
 
-    [Post("tasks/{id}/remarks")]
-    Task AddRemarkAsync([Path] Guid id, [Body] AddRemarkRequest request);
+    [Patch("tasks/{id}/status")]
+    Task ChangeStatusAsync([Path] Guid id, [Body] ChangeStatusRequest request);
 
+    // task tags
+    [Post("tasks/{id}/tags")]
+    Task AddTagToTaskAsync([Path] Guid id, [Body] TaskTagRequest request);
+
+    [Delete("tasks/{id}/tags/{tagId}")]
+    Task RemoveTagFromTaskAsync([Path] Guid id, [Path] Guid tagId);
+
+    // remarks
     [Get("tasks/{taskId}/remarks")]
-    Task<List<RemarkDto>> GetRemarkAsync([Path] Guid taskId);
+    Task<List<RemarkDto>> GetRemarksAsync([Path] Guid taskId);
 
-    [Post("tasks/{taskId}/tags/{tagId}")]
-    Task AddTagToTaskAsync([Path] Guid taskId, [Path] Guid tagId);
+    [Post("tasks/{taskId}/remarks")]
+    Task AddRemarkAsync([Path] Guid taskId, [Body] AddRemarkRequest request);
 
-    [Delete("tasks/{taskId}/tags/{tagId}")]
-    Task RemoveTagFromTaskAsync([Path] Guid taskId, [Path] Guid tagId);
+    [Delete("tasks/{taskId}/remarks/{remarkId}")]
+    Task DeleteRemarkAsync([Path] Guid taskId, [Path] Guid remarkId);
 
     // tags
-    [Get("process/{processId}/tags")]
+    [Get("processes/{processId}/tags")]
     Task<List<TagDto>> GetTagsAsync([Path] Guid processId);
 
-    [Post("process/{processId}/tags")]
+    [Post("processes/{processId}/tags")]
     Task<TagDto> CreateTagAsync([Path] Guid processId, [Body] CreateTagRequest request);
 
-    [Delete("tags/{id}")]
-    Task DeleteTagAsync([Path] Guid id);
+    [Delete("processes/{processId}/tags/{tagId}")]
+    Task DeleteTagAsync([Path] Guid processId, [Path] Guid tagId);
 
     // process
-    [Get("process/my")]
+    [Get("Process/my")]
     Task<PagedResult<ProcessDto>> GetMyProcessesAsync([Query] int pageNumber, [Query] int pageSize);
-    [Post("process")]
+
+    [Post("Process")]
     Task<ProcessDto> CreateProcessAsync([Body] CreateProcessRequest request);
+
+    [Get("Process/{processId}/role")]
+    Task<string> GetMyRoleAsync([Path] Guid processId);
+
+    [Get("Process/{processId}/members")]
+    Task<List<ProcessMemberDto>> GetProcessMembersAsync([Path] Guid processId);
 }

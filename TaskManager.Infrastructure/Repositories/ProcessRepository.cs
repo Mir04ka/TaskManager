@@ -74,4 +74,12 @@ public class ProcessRepository : IProcessRepository
     {
         return await _db.ProcessUsers.FirstOrDefaultAsync(pu => pu.ProcessId == processId && pu.UserId == userId);
     }
+
+    public async Task<List<ProcessUser>> GetMembersAsync(Guid processId)
+    {
+        return await _db.ProcessUsers
+            .Include(pu => pu.User)
+            .Where(pu => pu.ProcessId == processId)
+            .ToListAsync();
+    }
 }

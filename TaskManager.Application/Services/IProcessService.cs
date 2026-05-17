@@ -9,4 +9,5 @@ public interface IProcessService
     Task AddUserAsync(Guid processId, Guid userId, ProcessRole role);
     Task<PagedResult<Process>> GetCurrentUserProcessesAsync(int pageNumber, int pageSize);
     Task<ProcessRole?> GetCurrentUserRoleAsync(Guid processId);
+    Task<List<ProcessUser>> GetMembersAsync(Guid processId);
 }

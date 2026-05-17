@@ -62,7 +62,7 @@ public sealed partial class LoginViewModel : BaseViewModel
         {
             await _authService.LoginAsync(response.Token, response.Username, response.UserId);
             _logger.LogInformation("Login successful, navigating to tasks");
-            _navigationService.NavigateAndClearBackStack<TaskPage>();
+            _navigationService.NavigateAndClearBackStack<MainPage>();
         }
         else
         {

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿ using Microsoft.EntityFrameworkCore;
 using TaskManager.Domain.Entities;
 
 namespace TaskManager.Infrastructure.Data;
@@ -32,7 +32,7 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.Property(x => x.Name).HasMaxLength(200);
             e.HasMany(x => x.Users)
-                .WithOne()
+                .WithOne(x => x.Process)
                 .HasForeignKey(x => x.ProcessId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
@@ -40,7 +40,10 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<ProcessUser>(e =>
         {
             e.HasKey(x => new { x.ProcessId, x.UserId });
-            e.Property(x => x.Role).HasConversion<string>();
+            e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<TaskItem>(e =>
@@ -48,7 +51,6 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.Property(x => x.Title).HasMaxLength(200);
             e.Property(x => x.Description).HasMaxLength(1000);
-            e.Property(x => x.Status).HasConversion<string>();
             e.HasIndex(x => x.ProcessId);
             e.HasIndex(x => x.AssignedToUserId);
             e.HasOne(x => x.Process)
