@@ -38,6 +38,8 @@ public interface IApiClient
     // Processes
     Task<PagedResult<ProcessDto>> GetMyProcessesAsync(int pageNumber, int pageSize);
     Task<ProcessDto?> CreateProcessAsync(CreateProcessRequest request);
+    Task RenameProcessAsync(Guid processId, string name);
+    Task DeleteProcessAsync(Guid processId);
     Task<string?> GetMyRoleAsync(Guid processId);
     Task<List<ProcessMemberDto>> GetProcessMembersAsync(Guid processId);
 }

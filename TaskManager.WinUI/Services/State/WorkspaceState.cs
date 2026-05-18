@@ -10,6 +10,7 @@ public partial class WorkspaceState : ObservableObject
     private ProcessDto? selectedProcess;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsAdmin))]
     private string currentUserRole = string.Empty;
 
     [ObservableProperty]

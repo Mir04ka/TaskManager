@@ -85,15 +85,49 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
+                                
+                                <!-- Normal -->
                                 <TextBlock Grid.Column="0" Text="{Binding Name}"
-                               TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                           TextWrapping="Wrap" VerticalAlignment="Center"
+                                           Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisConverter}}"/>
+
+                                <!-- Rename -->
+                                <TextBox Grid.Column="0"
+                                         Text="{Binding EditName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisConverter}}"
+                                         MinWidth="100" Height="28" Padding="4,0"/>
+                                
                                 <Border Grid.Column="1" CornerRadius="10"
                                         Background="{ThemeResource SystemAccentColor}"
                                         Padding="6,2" Opacity="0.8">
                                     <TextBlock Text="{Binding IsAdmin, Converter={StaticResource AdminLabel}}"
                                                FontSize="10" VerticalAlignment="Center"/>
                                 </Border>
+                                
+                                <!-- Rename confirm/cancel -->
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2"
+                                            Visibility="{Binding IsRenaming, Converter={StaticResource BoolToVisConverter}}">
+                                    <Button Content="✔" Command="{Binding SaveRenameCommand}"
+                                            Width="28" Height="28" Padding="0" FontSize="11"/>
+                                    <Button Content="✖" Command="{Binding CancelRenameCommand}"
+                                            Width="28" Height="28" Padding="0" FontSize="11"/>
+                                </StackPanel>
+                                
+                                <!-- Edit/delete -->
+                                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="2"
+                                            Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisConverter}}">
+                                    <Button Content="✏️" Command="{Binding BeginRenameCommand}"
+                                            Width="28" Height="28" Padding="0" FontSize="11"
+                                            Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisConverter}}"
+                                            ToolTipService.ToolTip="Переименовать"/>
+                                    <Button Content="🗑️" Command="{Binding DeleteCommand}"
+                                            Width="28" Height="28" Padding="0" FontSize="11"
+                                            Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisConverter}}"
+                                            ToolTipService.ToolTip="Удалить процесс"/>
+                                </StackPanel>
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
@@ -398,7 +432,7 @@
                     <StackPanel Spacing="8">
                         <TextBlock Text="Заметки / Ремарки" FontWeight="SemiBold" FontSize="14"/>
 
-                        <ItemsControl ItemsSource="{Binding Remarks}">
+                        <ItemsControl ItemsSource="{Binding Remarks}" Tag="{Binding}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"

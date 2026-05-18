@@ -74,6 +74,7 @@ public sealed partial class TaskListViewModel : BaseViewModel
         {
             PageNumber = 1;
             SelectedTask = null;
+            AddTaskCommand.NotifyCanExecuteChanged();
             await LoadAsync();
             await LoadProcessDataAsync();
         }

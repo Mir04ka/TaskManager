@@ -16,8 +16,8 @@ public class TaskItem
     public Guid ProcessId { get; set; }
     public Process Process { get; set; } = null!;
 
-    public Guid AssignedToUserId { get; set; }
-    public User AssignedToUser { get; set; } = null!;
+    public Guid? AssignedToUserId { get; set; }
+    public User? AssignedToUser { get; set; } = null!;
     
     public Guid AssignedByUserId { get; set; }
 

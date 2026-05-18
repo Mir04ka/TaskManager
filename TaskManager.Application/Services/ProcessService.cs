@@ -26,6 +26,32 @@ public class ProcessService : IProcessService
         return _currentUser.CurrentUserId ?? throw new UnauthorizedAccessException();
     }
 
+    public async Task UpdateAsync(Guid processId, string name)
+    {
+        var userId = GetCurrentUserId();
+        var role = await _processRepo.GetUserRoleAsync(processId, userId);
+        if (role == null || role.Role != ProcessRole.Admin)
+            throw new UnauthorizedAccessException("Only admin can rename a process");
+
+        var process = await _processRepo.GetByIdAsync(processId)
+            ?? throw new Exception("Process not found");
+
+        process.Name = name;
+        await _processRepo.UpdateAsync(process);
+        _logger.LogInformation("Process {ProcessId} renamed to {Name}", processId, name);
+    }
+
+    public async Task DeleteAsync(Guid processId)
+    {
+        var userId = GetCurrentUserId();
+        var role = await _processRepo.GetUserRoleAsync(processId, userId);
+        if (role == null || role.Role != ProcessRole.Admin)
+            throw new UnauthorizedAccessException("Only admin can delete a process");
+
+        await _processRepo.DeleteAsync(processId);
+        _logger.LogInformation("Process {ProcessId} deleted", processId);
+    }
+
     public async Task<Process> CreateAsync(string name)
     {
         var userId = GetCurrentUserId();

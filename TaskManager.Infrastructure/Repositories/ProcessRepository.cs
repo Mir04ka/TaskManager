@@ -24,6 +24,7 @@ public class ProcessRepository : IProcessRepository
     {
         var query = _db.Processes
             .Where(p => p.Users.Any(u => u.UserId == userId))
+            .Include(p => p.Users)
             .AsNoTracking();
 
         var totalCount = await query.CountAsync();
@@ -47,6 +48,22 @@ public class ProcessRepository : IProcessRepository
     {
         _db.Processes.Add(process);
         await _db.SaveChangesAsync();
+    }
+
+    public async Task UpdateAsync(Process process)
+    {
+        _db.Processes.Update(process);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(Guid id)
+    {
+        var process = await _db.Processes.FindAsync(id);
+        if (process != null)
+        {
+            _db.Processes.Remove(process);
+            await _db.SaveChangesAsync();
+        }
     }
 
     public async Task AddUserAsync(Guid processId, Guid userId, ProcessRole role)

@@ -81,6 +81,12 @@ public interface ITasksApi
     [Post("Process")]
     Task<ProcessDto> CreateProcessAsync([Body] CreateProcessRequest request);
 
+    [Put("Process/{processId}")]
+    Task RenameProcessAsync([Path] Guid processId, [Body] CreateProcessRequest request);
+
+    [Delete("Process/{processId}")]
+    Task DeleteProcessAsync([Path] Guid processId);
+
     [Get("Process/{processId}/role")]
     Task<string> GetMyRoleAsync([Path] Guid processId);
 

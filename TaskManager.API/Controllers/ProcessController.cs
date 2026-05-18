@@ -61,6 +61,22 @@ public class ProcessController : ControllerBase
         });
     }
 
+    [HttpPut("{processId}")]
+    public async Task<ActionResult> UpdateProcess(Guid processId, [FromBody] CreateProcessRequest request)
+    {
+        _logger.LogInformation("UpdateProcess: {ProcessId} -> {Name}", processId, request.Name);
+        await _processService.UpdateAsync(processId, request.Name);
+        return NoContent();
+    }
+
+    [HttpDelete("{processId}")]
+    public async Task<ActionResult> DeleteProcess(Guid processId)
+    {
+        _logger.LogInformation("DeleteProcess: {ProcessId}", processId);
+        await _processService.DeleteAsync(processId);
+        return NoContent();
+    }
+
     [HttpPost]
     public async Task<ActionResult<ProcessDto>> CreateProcess([FromBody] CreateProcessRequest request)
     {

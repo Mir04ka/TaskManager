@@ -317,6 +317,18 @@ public class ApiClient : IApiClient
         }
     }
 
+    public async Task RenameProcessAsync(Guid processId, string name)
+    {
+        try { await WithRetryAsync(() => _api.RenameProcessAsync(processId, new CreateProcessRequest { Name = name })); }
+        catch (Exception ex) { _logger.LogError(ex, "RenameProcess error"); throw; }
+    }
+
+    public async Task DeleteProcessAsync(Guid processId)
+    {
+        try { await WithRetryAsync(() => _api.DeleteProcessAsync(processId)); }
+        catch (Exception ex) { _logger.LogError(ex, "DeleteProcess error"); throw; }
+    }
+
     public async Task<PagedResult<ProcessDto>> GetMyProcessesAsync(int pageNumber, int pageSize)
     {
         try
