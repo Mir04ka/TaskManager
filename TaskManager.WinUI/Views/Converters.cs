@@ -102,7 +102,7 @@ public sealed class DateOnlyConverter : IValueConverter
 public sealed class BoolToAdminLabelConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
-        => value is true ? "⭐ Админ" : "👤 Участник";
+        => value is true ? "Админ" : "Участник";
     public object ConvertBack(object value, Type targetType, object parameter, string language)
         => throw new NotImplementedException();
 }

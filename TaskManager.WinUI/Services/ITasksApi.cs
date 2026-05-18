@@ -92,4 +92,7 @@ public interface ITasksApi
 
     [Get("Process/{processId}/members")]
     Task<List<ProcessMemberDto>> GetProcessMembersAsync([Path] Guid processId);
+
+    [Post("Process/{processId}/users")]
+    Task AddUserToProcessAsync([Path] Guid processId, [Body] AddUserToProcessRequest request);
 }

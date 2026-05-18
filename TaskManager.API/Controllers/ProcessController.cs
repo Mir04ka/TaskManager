@@ -4,6 +4,7 @@ using TaskManager.API.DTOs;
 using TaskManager.AppCore.Common;
 using TaskManager.AppCore.Services;
 using TaskManager.Domain.Entities;
+using TaskManager.Domain.Interfaces;
 
 namespace TaskManager.API.Controllers;
 
@@ -15,12 +16,18 @@ public class ProcessController : ControllerBase
     private readonly IProcessService _processService;
     private readonly ILogger<ProcessController> _logger;
     private readonly ICurrentUserContext _currentUser;
+    private readonly IUserRepository _userRepo;
 
-    public ProcessController(IProcessService processService, ILogger<ProcessController> logger, ICurrentUserContext currentUser)
+    public ProcessController(
+        IProcessService processService, 
+        ILogger<ProcessController> logger, 
+        ICurrentUserContext currentUser,
+        IUserRepository userRepo)
     {
         _processService = processService;
         _logger = logger;
         _currentUser = currentUser;
+        _userRepo = userRepo;
     }
 
     [HttpGet("my")]
@@ -95,6 +102,14 @@ public class ProcessController : ControllerBase
     [HttpPost("{processId}/users")]
     public async Task<ActionResult> AddUser(Guid processId, [FromBody] AddUserToProcessRequest request)
     {
+        Guid userId = request.UserId;
+        if (userId == Guid.Empty && !string.IsNullOrWhiteSpace(request.Username))
+        {
+            var user = await _userRepo.GetByUsernameAsync(request.Username);
+            if (user == null) return NotFound("User not found");
+            userId = user.Id;
+        }
+
         _logger.LogInformation("AddUser to process: {ProcessId}, user: {UserId}", processId, request.UserId);
 
         var role = request.Role.ToLower() == "admin" ? ProcessRole.Admin : ProcessRole.Member;

@@ -42,4 +42,5 @@ public interface IApiClient
     Task DeleteProcessAsync(Guid processId);
     Task<string?> GetMyRoleAsync(Guid processId);
     Task<List<ProcessMemberDto>> GetProcessMembersAsync(Guid processId);
+    Task AddUserToProcessAsync(Guid processId, string username);
 }

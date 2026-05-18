@@ -85,12 +85,6 @@ public sealed partial class ProcessListViewModel : BaseViewModel
                 Role = value.Role
             };
             _state.CurrentUserRole = value.Role;
-            _state.SelectedProcess = new ProcessDto
-            {
-                Id = value.Id,
-                Name = value.Name,
-                Role = value.Role
-            };
         }
         else
         {
@@ -168,9 +162,43 @@ public sealed partial class ProcessItemVm : ObservableObject
 
     public bool IsAdmin => Role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 
+    [ObservableProperty]
+    private bool _isRenaming;
+
+    [ObservableProperty]
+    private string _editName = string.Empty;
+
     public ProcessItemVm(ProcessListViewModel parent, IApiClient apiClient)
     {
         _parent = parent;
         _apiClient = apiClient;
+    }
+
+    [RelayCommand]
+    private void BeginRename()
+    {
+        EditName = Name;
+        IsRenaming = true;
+    }
+
+    [RelayCommand]
+    private async Task SaveRename()
+    {
+        if (string.IsNullOrWhiteSpace(EditName)) return;
+
+        try
+        {
+            await _apiClient.RenameProcessAsync(Id, EditName);
+            Name = EditName;
+            IsRenaming = false;
+        }
+        catch
+        { }
+    }
+
+    [RelayCommand]
+    private void CancelRename()
+    {
+        IsRenaming = false;
     }
 }

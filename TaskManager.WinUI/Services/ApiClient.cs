@@ -381,6 +381,23 @@ public class ApiClient : IApiClient
         }
     }
 
+    public async Task AddUserToProcessAsync(Guid processId, string username)
+    {
+        try
+        {
+            await WithRetryAsync(() 
+                => _api.AddUserToProcessAsync(processId, new AddUserToProcessRequest 
+                { 
+                    Username = username 
+                }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AddUserToProcess error"); 
+            throw;
+        }
+    }
+
     private static PagedResult<T> Empty<T>(int pageNumber, int pageSize) => new()
     {
         Items = new List<T>(),

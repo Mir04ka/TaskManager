@@ -45,8 +45,12 @@ public sealed partial class TaskListViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isLoading;
 
+    [ObservableProperty]
+    private string _newMemberUsername = string.Empty;
+
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
     public bool IsAdmin => _state.IsAdmin;
+    public WorkspaceState State => _state;
 
     public ObservableCollection<TaskItemVm> Tasks { get; } = [];
     public ObservableCollection<ProcessMemberDto> ProcessMembers { get; } = [];
@@ -75,15 +79,15 @@ public sealed partial class TaskListViewModel : BaseViewModel
             PageNumber = 1;
             SelectedTask = null;
             AddTaskCommand.NotifyCanExecuteChanged();
-            await LoadAsync();
             await LoadProcessDataAsync();
+            await LoadAsync();
         }
         if (e.PropertyName == nameof(WorkspaceState.IsAdmin))
         {
             OnPropertyChanged(nameof(IsAdmin));
             AddTaskCommand.NotifyCanExecuteChanged();
-            await LoadAsync();
             await LoadProcessDataAsync();
+            await LoadAsync();
         }
     }
 
@@ -171,7 +175,7 @@ public sealed partial class TaskListViewModel : BaseViewModel
                 Title = "New task",
                 Description = string.Empty,
                 ProcessId = proc.Id,
-                Deadline = null
+                Deadline = DateTime.UtcNow.AddDays(30)
             });
             if (created != null)
             {
@@ -181,6 +185,25 @@ public sealed partial class TaskListViewModel : BaseViewModel
             }
         }
         catch (Exception ex) { _logger.LogError(ex, "Error adding task"); }
+    }
+
+    [RelayCommand]
+    private async Task AddMember()
+    {
+        if (string.IsNullOrWhiteSpace(NewMemberUsername)) return;
+        var proc = _state.SelectedProcess;
+        if (proc == null) return;
+
+        try
+        {
+            await _apiClient.AddUserToProcessAsync(proc.Id, NewMemberUsername);
+            NewMemberUsername = string.Empty;
+            await LoadProcessDataAsync();
+        }
+        catch (Exception ex) 
+        { 
+            _logger.LogError(ex, "Error adding member"); 
+        }
     }
 
     [RelayCommand]
@@ -217,7 +240,11 @@ public sealed partial class TaskListViewModel : BaseViewModel
     partial void OnSelectedTaskChanged(TaskItemVm? value)
     {
         if (value != null)
+        {
+            value.UpdateOriginals();
+            value.UpdateSelectedAssignee();
             _ = LoadTaskRemarksAsync(value);
+        }
     }
 
     private async Task LoadTaskRemarksAsync(TaskItemVm vm)
@@ -271,6 +298,8 @@ public sealed partial class TaskItemVm : ObservableObject
     private bool _isAssigning;
     [ObservableProperty] 
     private ProcessMemberDto? _selectedAssignee;
+    [ObservableProperty]
+    private string _newTagName = string.Empty;
 
     public ObservableCollection<TagDto> Tags { get; set; } = [];
     public ObservableCollection<RemarkDto> Remarks { get; set; } = [];
@@ -290,9 +319,9 @@ public sealed partial class TaskItemVm : ObservableObject
 
     public string StatusDisplay => Status switch
     {
-        "Todo" => "📋 К выполнению",
-        "InProgress" => "🔄 В работе",
-        "Done" => "✅ Завершено",
+        "Todo" => "К выполнению",
+        "InProgress" => "В работе",
+        "Done" => "Завершено",
         _ => Status
     };
 
@@ -302,13 +331,23 @@ public sealed partial class TaskItemVm : ObservableObject
         _apiClient = apiClient;
     }
 
-    [RelayCommand]
-    private void BeginEdit()
+    public void UpdateOriginals()
     {
         _originalTitle = Title;
         _originalDescription = Description;
         _originalStatus = Status;
         _originalDeadline = Deadline;
+    }
+
+    public void UpdateSelectedAssignee()
+    {
+        SelectedAssignee = ProcessMembers.FirstOrDefault(m => m.UserId == AssignedToUserId);
+    }
+
+    [RelayCommand]
+    private void BeginEdit()
+    {
+        UpdateOriginals();
         IsEditing = true;
     }
 
@@ -383,6 +422,7 @@ public sealed partial class TaskItemVm : ObservableObject
             AssignedToUserId = member.UserId;
             AssignedToUsername = member.Username;
             IsAssigning = false;
+            OnPropertyChanged(nameof(AssignedToUsername));
         }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Assign error: {ex.Message}"); }
     }
@@ -395,7 +435,6 @@ public sealed partial class TaskItemVm : ObservableObject
         {
             await _apiClient.AddRemarkAsync(Id, new AddRemarkRequest { Text = NewRemarkText });
             NewRemarkText = string.Empty;
-            // Reload remarks
             var remarks = await _apiClient.GetRemarksAsync(Id);
             Remarks.Clear();
             foreach (var r in remarks) Remarks.Add(r);
@@ -437,5 +476,22 @@ public sealed partial class TaskItemVm : ObservableObject
             Tags.Remove(tag);
         }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"RemoveTag error: {ex.Message}"); }
+    }
+
+    [RelayCommand]
+    private async Task CreateTag()
+    {
+        if (string.IsNullOrWhiteSpace(NewTagName)) return;
+        try
+        {
+            var procId = _parent.State.SelectedProcess!.Id;
+            var tag = await _apiClient.CreateTagAsync(procId, NewTagName);
+            if (tag != null)
+            {
+                AvailableTags.Add(tag);
+                NewTagName = string.Empty;
+            }
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"CreateTag error: {ex.Message}"); }
     }
 }
