@@ -5,6 +5,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Threading.Tasks;
+using TaskManager.WinUI.Localization;
 using TaskManager.WinUI.Models;
 using TaskManager.WinUI.Services;
 using TaskManager.WinUI.Services.State;
@@ -15,6 +16,8 @@ public sealed partial class ProcessListViewModel : BaseViewModel
     private readonly IApiClient _apiClient;
     private readonly ILogger<ProcessListViewModel> _logger;
     private readonly WorkspaceState _state;
+
+    public LocalizationService Loc { get; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TotalPages))]
@@ -40,11 +43,13 @@ public sealed partial class ProcessListViewModel : BaseViewModel
     public ProcessListViewModel(
         IApiClient apiClient,
         ILogger<ProcessListViewModel> logger,
-        WorkspaceState state)
+        WorkspaceState state,
+        LocalizationService loc)
     {
         _apiClient = apiClient;
         _logger = logger;
         _state = state;
+        Loc = loc;
     }
 
     public async Task LoadAsync()
@@ -56,7 +61,7 @@ public sealed partial class ProcessListViewModel : BaseViewModel
 
             foreach (var item in result.Items)
             {
-                Processes.Add(new ProcessItemVm(this, _apiClient)
+                Processes.Add(new ProcessItemVm(this, _apiClient, Loc)
                 {
                     Id = item.Id,
                     Name = item.Name,
@@ -105,7 +110,7 @@ public sealed partial class ProcessListViewModel : BaseViewModel
 
             if (newProcess != null)
             {
-                Processes.Add(new ProcessItemVm(this, _apiClient)
+                Processes.Add(new ProcessItemVm(this, _apiClient, Loc)
                 {
                     Id = newProcess.Id,
                     Name = newProcess.Name,
@@ -147,6 +152,8 @@ public sealed partial class ProcessItemVm : ObservableObject
     private readonly ProcessListViewModel _parent;
     private readonly IApiClient _apiClient;
 
+    public LocalizationService Loc { get; }
+
     public Guid Id { get; set; }
 
     private string _name = string.Empty;
@@ -168,10 +175,11 @@ public sealed partial class ProcessItemVm : ObservableObject
     [ObservableProperty]
     private string _editName = string.Empty;
 
-    public ProcessItemVm(ProcessListViewModel parent, IApiClient apiClient)
+    public ProcessItemVm(ProcessListViewModel parent, IApiClient apiClient, LocalizationService loc)
     {
         _parent = parent;
         _apiClient = apiClient;
+        Loc = loc;
     }
 
     [RelayCommand]

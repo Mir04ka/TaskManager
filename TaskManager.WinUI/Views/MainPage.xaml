@@ -69,8 +69,8 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0" Padding="12,10,12,6" Spacing="8">
-                    <TextBlock Text="Мои процессы" FontWeight="SemiBold" FontSize="13" Opacity="0.6"/>
-                    <Button Content="+ Новый процесс"
+                    <TextBlock Text="{Binding Loc[MyProcesses]}" FontWeight="SemiBold" FontSize="13" Opacity="0.6"/>
+                    <Button Content="{Binding Loc[AddProcess]}"
                             Command="{Binding Processes.AddProcessCommand}"
                             HorizontalAlignment="Stretch" Height="36"/>
                 </StackPanel>
@@ -118,7 +118,7 @@
                                 <!-- Edit/delete -->
                                 <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="2"
                                             Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisConverter}}">
-                                    <Button Content="Edit" Command="{Binding BeginRenameCommand}"
+                                    <Button Content="✏️" Command="{Binding BeginRenameCommand}"
                                             Width="28" Height="28" Padding="0" FontSize="11"
                                             Visibility="{Binding IsRenaming, Converter={StaticResource InverseBoolToVisConverter}}"/>
                                 </StackPanel>
@@ -167,18 +167,18 @@
                     </Grid.ColumnDefinitions>
 
                     <Button Grid.Column="0"
-                            Content="+ Задача"
+                            Content="{Binding Loc[AddTask]}"
                             Command="{Binding Tasks.AddTaskCommand}"
                             Visibility="{Binding Tasks.IsAdmin, Converter={StaticResource BoolToVisConverter}}"
                             Height="36" Padding="12,0" Margin="0,0,8,0"/>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Visibility="{Binding Tasks.IsAdmin, Converter={StaticResource BoolToVisConverter}}">
-                        <TextBox Text="{Binding Tasks.NewMemberUsername, Mode=TwoWay}" PlaceholderText="Имя пользователя" Width="140" Height="36"/>
-                        <Button Content="В процесс" Command="{Binding Tasks.AddMemberCommand}" Height="36"/>
+                        <TextBox Text="{Binding Tasks.NewMemberUsername, Mode=TwoWay}" PlaceholderText="{Binding Loc[Username]}" Width="140" Height="36"/>
+                        <Button Content="{Binding Loc[AddToProcess]}" Command="{Binding Tasks.AddMemberCommand}" Height="36"/>
                     </StackPanel>
 
                     <TextBox Grid.Column="2"
-                             PlaceholderText="Поиск задач..."
+                             PlaceholderText="{Binding Loc[TaskSearch]}"
                              Text="{Binding Tasks.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              Margin="8,0" Height="36"/>
 
@@ -253,7 +253,7 @@
                                                 <Border Background="{Binding Status, Converter={StaticResource StatusToBrush}}"
                                                         CornerRadius="10"
                                                         Padding="6,2">
-                                                    <TextBlock Text="{Binding StatusDisplay}"
+                                                    <TextBlock Text="{Binding Status}"
                                                                FontSize="11"
                                                                Foreground="White"/>
                                                 </Border>
@@ -261,7 +261,7 @@
                                                 <StackPanel Orientation="Horizontal"
                                                             Spacing="4"
                                                             Visibility="{Binding Deadline, Converter={StaticResource NullToCollapsed}}">
-                                                    <TextBlock Text="📅" FontSize="11"/>
+                                                    <TextBlock Text="{Binding Loc[Deadline]}" FontSize="11"/>
 
                                                     <TextBlock Text="{Binding Deadline, Converter={StaticResource DateOnly}}"
                                                                FontSize="11"
@@ -271,7 +271,7 @@
                                                 <StackPanel Orientation="Horizontal"
                                                             Spacing="4"
                                                             Visibility="{Binding AssignedToUsername, Converter={StaticResource EmptyStringToCollapsed}}">
-                                                    <TextBlock Text="👤" FontSize="11"/>
+                                                    <TextBlock Text="{Binding Loc[AssignedTo]}" FontSize="11"/>
 
                                                     <TextBlock Text="{Binding AssignedToUsername}"
                                                                FontSize="11"
@@ -284,10 +284,10 @@
                                         <StackPanel Grid.Column="1"
                                                     VerticalAlignment="Bottom">
 
-                                            <Button Content="🗑️"
+                                            <Button Content="{Binding Loc[Delete]}"
                                                     Command="{Binding DeleteCommand}"
                                                     Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisConverter}}"
-                                                    Width="36"
+                                                    Width="72"
                                                     Height="32"
                                                     Padding="0"/>
                                         </StackPanel>
@@ -320,7 +320,7 @@
 
                     <!-- Title -->
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Название" FontSize="11" Opacity="0.5"/>
+                        <TextBlock Text="{Binding Loc[Title]}" FontSize="11" Opacity="0.5"/>
                         <TextBox Text="{Binding Title, Mode=TwoWay}"
                                  IsReadOnly="{Binding IsAdmin, Converter={StaticResource InverseBool}}"
                                  FontSize="16" FontWeight="SemiBold"
@@ -329,7 +329,7 @@
 
                     <!-- Description -->
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Описание" FontSize="11" Opacity="0.5"/>
+                        <TextBlock Text="{Binding Loc[Description]}" FontSize="11" Opacity="0.5"/>
                         <TextBox Text="{Binding Description, Mode=TwoWay}"
                                  IsReadOnly="{Binding IsAdmin, Converter={StaticResource InverseBool}}"
                                  TextWrapping="Wrap" AcceptsReturn="True" MinHeight="72"
@@ -345,8 +345,8 @@
 
                         <!-- Status -->
                         <StackPanel Grid.Column="0" Spacing="4">
-                            <TextBlock Text="Статус" FontSize="11" Opacity="0.5"/>
-                            <ComboBox SelectedItem="{Binding Status, Mode=TwoWay}"
+                            <TextBlock Text="{Binding Loc[Status]}" FontSize="11" Opacity="0.5"/>
+                            <ComboBox SelectedItem="{Binding DraftStatus, Mode=TwoWay}"
                                       HorizontalAlignment="Stretch" Height="36">
                                 <x:String>Todo</x:String>
                                 <x:String>InProgress</x:String>
@@ -356,8 +356,8 @@
 
                         <!-- Deadline -->
                         <StackPanel Grid.Column="1" Spacing="4">
-                            <TextBlock Text="Дедлайн" FontSize="11" Opacity="0.5"/>
-                            <CalendarDatePicker Date="{Binding Deadline, Mode=TwoWay, Converter={StaticResource DateConverter}}"
+                            <TextBlock Text="{Binding Loc[Deadline]}" FontSize="11" Opacity="0.5"/>
+                            <CalendarDatePicker Date="{Binding DraftDeadline, Mode=TwoWay, Converter={StaticResource DateConverter}}"
                                                 HorizontalAlignment="Stretch" Height="36"
                                                 PlaceholderText="Не указан"/>
                         </StackPanel>
@@ -366,7 +366,7 @@
                     <!-- Assignee (admin only) -->
                     <StackPanel Spacing="4"
                                 Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisConverter}}">
-                        <TextBlock Text="Исполнитель" FontSize="11" Opacity="0.5"/>
+                        <TextBlock Text="{Binding Loc[Executor]}" FontSize="11" Opacity="0.5"/>
                         <Grid ColumnSpacing="8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -377,13 +377,13 @@
                                       SelectedValue="{Binding SelectedAssignee, Mode=TwoWay}"
                                       DisplayMemberPath="Username"
                                       HorizontalAlignment="Stretch" Height="36"/>
-                            <Button Grid.Column="1" Content="Назначить"
+                            <Button Grid.Column="1" Content="{Binding Loc[Assign]}"
                                     Command="{Binding AssignToCommand}"
                                     CommandParameter="{Binding SelectedAssignee}"
                                     Height="36" Padding="10,0"/>
                         </Grid>
                         <TextBlock Opacity="0.6" FontSize="12">
-                            <Run Text="Текущий: "/>
+                            <Run Text="{Binding Loc[Current]}"/>
                             <Run Text="{Binding AssignedToUsername}"/>
                         </TextBlock>
                     </StackPanel>
@@ -391,11 +391,11 @@
                     <!-- Save / Cancel editing -->
                     <StackPanel Orientation="Horizontal" Spacing="8"
                                 Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisConverter}}">
-                        <Button Content="Сохранить"
+                        <Button Content="{Binding Loc[Save]}"
                                 Command="{Binding SaveCommand}"
                                 Style="{StaticResource AccentButtonStyle}"
                                 Height="36" Padding="14,0"/>
-                        <Button Content="Отмена"
+                        <Button Content="{Binding Loc[Cancel]}"
                                 Command="{Binding CancelEditCommand}"
                                 Height="36" Padding="14,0"/>
                     </StackPanel>
@@ -405,10 +405,10 @@
 
                     <!-- Tags section -->
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Теги" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="{Binding Loc[Tags]}" FontWeight="SemiBold" FontSize="14"/>
 
                         <!-- Current tags -->
-                        <ItemsControl ItemsSource="{Binding Tags}">
+                        <ItemsControl ItemsSource="{Binding Tags}" x:Name="TagsList" Tag="{Binding}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <ItemsWrapGrid Orientation="Horizontal"
@@ -430,8 +430,8 @@
                                                         VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
 
                                             <Button Grid.Column="1" Content="✕" Width="18" Height="18" Padding="0" FontSize="9" 
-                                                    VerticalAlignment="Center" Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource Mode=Self}}" CommandParameter="{Binding}" 
-                                                    Visibility="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource Mode=Self}, Converter={StaticResource BoolToVisConverter}}"/>
+                                                    VerticalAlignment="Center" Command="{Binding Tag.RemoveTagCommand, ElementName=TagsList}" CommandParameter="{Binding}" 
+                                                    Visibility="{Binding Tag.IsAdmin, ElementName=TagsList, Converter={StaticResource BoolToVisConverter}}"/>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
@@ -455,12 +455,12 @@
                                 <ComboBox Grid.Column="0"
                                           ItemsSource="{Binding AvailableTags}"
                                           DisplayMemberPath="Name"
-                                          PlaceholderText="Выберите тег..."
+                                          PlaceholderText="{Binding Loc[ChooseTag]}"
                                           Height="34"
                                           x:Name="TagSelector"/>
 
                                 <Button Grid.Column="1"
-                                        Content="Добавить"
+                                        Content="{Binding Loc[Add]}"
                                         Command="{Binding AddTagCommand}"
                                         CommandParameter="{Binding SelectedItem, ElementName=TagSelector}"
                                         Height="34"
@@ -476,11 +476,11 @@
 
                                 <TextBox Grid.Column="0"
                                          Text="{Binding NewTagName, Mode=TwoWay}"
-                                         PlaceholderText="Новый тег"
+                                         PlaceholderText="{Binding Loc[NewTag]}"
                                          Height="34" MaxLength="32"/>
 
                                 <Button Grid.Column="1"
-                                        Content="Создать"
+                                        Content="{Binding Loc[Create]}"
                                         Command="{Binding CreateTagCommand}"
                                         Height="34"
                                         Padding="10,0"/>
@@ -492,9 +492,9 @@
 
                     <!-- Remarks section -->
                     <StackPanel Spacing="8">
-                        <TextBlock Text="Заметки / Ремарки" FontWeight="SemiBold" FontSize="14"/>
+                        <TextBlock Text="{Binding Loc[Remarks]}" FontWeight="SemiBold" FontSize="14"/>
 
-                        <ItemsControl ItemsSource="{Binding Remarks}" Tag="{Binding}">
+                        <ItemsControl ItemsSource="{Binding Remarks}" Tag="{Binding}" x:Name="RemarksList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
@@ -514,7 +514,7 @@
                                                     <TextBlock Text="{Binding CreatedAt, Converter={StaticResource DateTimeToStr}}"
                                                    FontSize="11" Opacity="0.5" VerticalAlignment="Center"/>
                                                 </StackPanel>
-                                                <Button Grid.Column="1" Content="🗑️" Width="28" Height="28"
+                                                <Button Grid.Column="1" Content="{Binding DataContext.Loc[Delete], ElementName=RemarksList}" Width="56" Height="28"
                                                         Padding="0" FontSize="11"
                                                         Command="{Binding Tag.DeleteRemarkCommand, ElementName=RemarksList}"
                                                         CommandParameter="{Binding}"
@@ -536,10 +536,10 @@
                             </Grid.ColumnDefinitions>
                             <TextBox Grid.Column="0"
                                      Text="{Binding NewRemarkText, Mode=TwoWay}"
-                                     PlaceholderText="Добавить заметку..."
+                                     PlaceholderText="{Binding Loc[AddRemark]}"
                                      TextWrapping="Wrap" AcceptsReturn="True"
                                      MinHeight="56" MaxHeight="120"/>
-                            <Button Grid.Column="1" Content="Добавить"
+                            <Button Grid.Column="1" Content="{Binding Loc[Add]}"
                                     Command="{Binding AddRemarkCommand}"
                                     VerticalAlignment="Top" Height="36" Padding="10,0"/>
                         </Grid>
@@ -552,7 +552,7 @@
                         HorizontalAlignment="Center" VerticalAlignment="Center"
                         Visibility="{Binding Tasks.SelectedTask, Converter={StaticResource NullToVisible}}"
                         Spacing="12" Opacity="0.4">
-                <TextBlock Text="Выберите задачу" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding Loc[ChooseTask]}" HorizontalAlignment="Center"/>
             </StackPanel>
         </Grid>
     </Grid>

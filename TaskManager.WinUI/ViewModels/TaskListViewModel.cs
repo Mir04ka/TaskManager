@@ -22,6 +22,8 @@ public sealed partial class TaskListViewModel : BaseViewModel
     private readonly ILogger<TaskListViewModel> _logger;
     private readonly WorkspaceState _state;
 
+    public LocalizationService Loc { get; }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TotalPages))]
     [NotifyCanExecuteChangedFor(nameof(NextPageCommand))]
@@ -63,11 +65,13 @@ public sealed partial class TaskListViewModel : BaseViewModel
     public TaskListViewModel(
         IApiClient apiClient,
         ILogger<TaskListViewModel> logger,
-        WorkspaceState state)
+        WorkspaceState state,
+        LocalizationService loc)
     {
         _apiClient = apiClient;
         _logger = logger;
         _state = state;
+        Loc = loc;
 
         _state.PropertyChanged += OnStateChanged;
     }
@@ -148,7 +152,7 @@ public sealed partial class TaskListViewModel : BaseViewModel
         }
     }
 
-    private TaskItemVm MapToVm(TaskItemDto item) => new TaskItemVm(this, _apiClient)
+    private TaskItemVm MapToVm(TaskItemDto item) => new TaskItemVm(this, _apiClient, Loc)
     {
         Id = item.Id,
         Title = item.Title,
@@ -266,6 +270,8 @@ public sealed partial class TaskItemVm : ObservableObject
     private readonly TaskListViewModel _parent;
     private readonly IApiClient _apiClient;
 
+    public LocalizationService Loc { get; }
+
     public Guid Id { get; set; }
 
     private string _title = string.Empty;
@@ -300,6 +306,10 @@ public sealed partial class TaskItemVm : ObservableObject
     private ProcessMemberDto? _selectedAssignee;
     [ObservableProperty]
     private string _newTagName = string.Empty;
+    [ObservableProperty]
+    private string _draftStatus = "Todo";
+    [ObservableProperty]
+    private DateTime? _draftDeadline;
 
     public ObservableCollection<TagDto> Tags { get; set; } = [];
     public ObservableCollection<RemarkDto> Remarks { get; set; } = [];
@@ -317,18 +327,11 @@ public sealed partial class TaskItemVm : ObservableObject
         ? Deadline.Value.ToString("dd.MM.yyyy")
         : "—";
 
-    public string StatusDisplay => Status switch
-    {
-        "Todo" => "К выполнению",
-        "InProgress" => "В работе",
-        "Done" => "Завершено",
-        _ => Status
-    };
-
-    public TaskItemVm(TaskListViewModel parent, IApiClient apiClient)
+    public TaskItemVm(TaskListViewModel parent, IApiClient apiClient, LocalizationService loc)
     {
         _parent = parent;
         _apiClient = apiClient;
+        Loc = loc;
     }
 
     public void UpdateOriginals()
@@ -348,6 +351,8 @@ public sealed partial class TaskItemVm : ObservableObject
     private void BeginEdit()
     {
         UpdateOriginals();
+        DraftStatus = Status;
+        DraftDeadline = Deadline;
         IsEditing = true;
     }
 
@@ -357,6 +362,8 @@ public sealed partial class TaskItemVm : ObservableObject
         if (string.IsNullOrWhiteSpace(Title)) return;
         try
         {
+            Status = DraftStatus;
+            Deadline = DraftDeadline;
             await _apiClient.UpdateTaskAsync(Id, new UpdateTaskRequest
             {
                 Id = Id,
@@ -367,7 +374,6 @@ public sealed partial class TaskItemVm : ObservableObject
             });
             IsEditing = false;
             OnPropertyChanged(nameof(DeadlineDisplay));
-            OnPropertyChanged(nameof(StatusDisplay));
         }
         catch (Exception ex)
         {
@@ -407,7 +413,6 @@ public sealed partial class TaskItemVm : ObservableObject
         {
             await _apiClient.ChangeStatusAsync(Id, status);
             Status = status;
-            OnPropertyChanged(nameof(StatusDisplay));
         }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"ChangeStatus error: {ex.Message}"); }
     }

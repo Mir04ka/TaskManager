@@ -117,11 +117,26 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Add" xml:space="preserve">
+    <value>Добавить</value>
+  </data>
   <data name="AddProcess" xml:space="preserve">
     <value>Новый процесс</value>
   </data>
+  <data name="AddRemark" xml:space="preserve">
+    <value>Добавить ремарку</value>
+  </data>
   <data name="AddTask" xml:space="preserve">
     <value>Добавить задачу</value>
+  </data>
+  <data name="AddToProcess" xml:space="preserve">
+    <value>В процесс</value>
+  </data>
+  <data name="Assign" xml:space="preserve">
+    <value>Назначить</value>
+  </data>
+  <data name="AssignedTo" xml:space="preserve">
+    <value>Назначена:</value>
   </data>
   <data name="Auth" xml:space="preserve">
     <value>Авторизация</value>
@@ -132,6 +147,21 @@
   <data name="Cancel" xml:space="preserve">
     <value>Отмена</value>
   </data>
+  <data name="ChooseTag" xml:space="preserve">
+    <value>Выберите тег</value>
+  </data>
+  <data name="ChooseTask" xml:space="preserve">
+    <value>Выберите задачу</value>
+  </data>
+  <data name="Create" xml:space="preserve">
+    <value>Создать</value>
+  </data>
+  <data name="Current" xml:space="preserve">
+    <value>Текущий</value>
+  </data>
+  <data name="Deadline" xml:space="preserve">
+    <value>Дедлайн</value>
+  </data>
   <data name="Delete" xml:space="preserve">
     <value>Удалить</value>
   </data>
@@ -140,6 +170,9 @@
   </data>
   <data name="Edit" xml:space="preserve">
     <value>Редактировать</value>
+  </data>
+  <data name="Executor" xml:space="preserve">
+    <value>Исполнитель</value>
   </data>
   <data name="Language" xml:space="preserve">
     <value>Язык</value>
@@ -150,6 +183,12 @@
   <data name="Logout" xml:space="preserve">
     <value>Выход</value>
   </data>
+  <data name="MyProcesses" xml:space="preserve">
+    <value>Мои процессы</value>
+  </data>
+  <data name="NewTag" xml:space="preserve">
+    <value>Новый тег</value>
+  </data>
   <data name="NoDescription" xml:space="preserve">
     <value>Нет описания</value>
   </data>
@@ -159,14 +198,26 @@
   <data name="Register" xml:space="preserve">
     <value>Регистрация</value>
   </data>
+  <data name="Remarks" xml:space="preserve">
+    <value>Ремарки</value>
+  </data>
   <data name="Save" xml:space="preserve">
     <value>Сохранить</value>
   </data>
   <data name="Settings" xml:space="preserve">
     <value>Настройки</value>
   </data>
+  <data name="Status" xml:space="preserve">
+    <value>Статус</value>
+  </data>
+  <data name="Tags" xml:space="preserve">
+    <value>Теги</value>
+  </data>
   <data name="Tasks" xml:space="preserve">
     <value>Задачи</value>
+  </data>
+  <data name="TaskSearch" xml:space="preserve">
+    <value>Поиск задач...</value>
   </data>
   <data name="Title" xml:space="preserve">
     <value>Название</value>
