@@ -110,10 +110,10 @@ public class ProcessController : ControllerBase
             userId = user.Id;
         }
 
-        _logger.LogInformation("AddUser to process: {ProcessId}, user: {UserId}", processId, request.UserId);
+        _logger.LogInformation("AddUser to process: {ProcessId}, user: {UserId}", processId, userId);
 
         var role = request.Role.ToLower() == "admin" ? ProcessRole.Admin : ProcessRole.Member;
-        await _processService.AddUserAsync(processId, request.UserId, role);
+        await _processService.AddUserAsync(processId, userId, role);
 
         return NoContent();
     }
